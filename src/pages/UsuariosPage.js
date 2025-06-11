@@ -1,44 +1,71 @@
-import React, { useState } from "react";
-
-const usuarios = [
-  { id: 1, nombre: "Juan Pérez", correo: "juan@example.com", rol: "Administrador" },
-  { id: 2, nombre: "María López", correo: "maria@example.com", rol: "Editor" },
-  { id: 3, nombre: "Carlos Gómez", correo: "carlos@example.com", rol: "Lector" },
-  { id: 4, nombre: "Ana Torres", correo: "ana@example.com", rol: "Editor" },
-  { id: 5, nombre: "Luis Sánchez", correo: "luis@example.com", rol: "Lector" },
-  { id: 6, nombre: "Laura Méndez", correo: "laura@example.com", rol: "Administrador" },
-];
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 const roles = ["Todos", "Administrador", "Editor", "Lector"];
-
 const pageSize = 3;
 
 export default function UsuariosPage() {
+  const [usuarios, setUsuarios] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [busqueda, setBusqueda] = useState("");
   const [filtroRol, setFiltroRol] = useState("Todos");
 
+  // Cargar usuarios desde API
+  useEffect(() => {
+    const fetchUsuarios = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get("http://localhost:4000/usuarios");
+        setUsuarios(res.data);
+        setError(null);
+      } catch (err) {
+        setError("Error al cargar usuarios");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsuarios();
+  }, []);
+
+  // Filtrar y buscar usuarios
   const usuariosFiltrados = usuarios.filter((usuario) => {
     const cumpleBusqueda =
       `${usuario.nombre} ${usuario.correo} ${usuario.rol}`
         .toLowerCase()
         .includes(busqueda.toLowerCase());
-
     const cumpleFiltroRol = filtroRol === "Todos" ? true : usuario.rol === filtroRol;
-
     return cumpleBusqueda && cumpleFiltroRol;
   });
 
+  // Paginación
   const totalPages = Math.ceil(usuariosFiltrados.length / pageSize);
   const usuariosVisibles = usuariosFiltrados.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
+  // Manejar filtro de rol
   const handleFiltroRol = (rol) => {
     setFiltroRol(rol);
     setCurrentPage(1);
   };
+
+  // Eliminar usuario
+  const handleEliminar = async (id) => {
+    if (!window.confirm("¿Estás seguro de eliminar este usuario?")) return;
+    try {
+      await axios.delete(`http://localhost:4000/usuarios/${id}`);
+      setUsuarios((prev) => prev.filter((u) => u.id !== id));
+    } catch {
+      alert("Error eliminando usuario");
+    }
+  };
+
+  if (loading) return <p className="p-6">Cargando usuarios...</p>;
+  if (error) return <p className="p-6 text-red-600">{error}</p>;
 
   return (
     <div className="bg-white p-6 rounded shadow">
@@ -46,7 +73,6 @@ export default function UsuariosPage() {
 
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
-        {/* Barra de búsqueda */}
         <input
           type="text"
           placeholder="Buscar por nombre, correo o rol..."
@@ -58,7 +84,6 @@ export default function UsuariosPage() {
           }}
         />
 
-        {/* Filtro por rol */}
         <div className="flex gap-2">
           {roles.map((rol) => (
             <button
@@ -88,22 +113,29 @@ export default function UsuariosPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
-            {usuariosVisibles.map((usuario) => (
-              <tr key={usuario.id} className="hover:bg-gray-50">
-                <td className="px-4 py-2 text-sm text-gray-800">{usuario.nombre}</td>
-                <td className="px-4 py-2 text-sm text-gray-600">{usuario.correo}</td>
-                <td className="px-4 py-2 text-sm text-gray-600">{usuario.rol}</td>
-                <td className="px-4 py-2 text-sm text-right">
-                  <button className="text-blue-600 hover:underline text-sm">Editar</button>
-                </td>
-              </tr>
-            ))}
-            {usuariosVisibles.length === 0 && (
+            {usuariosVisibles.length === 0 ? (
               <tr>
                 <td colSpan="4" className="text-center text-gray-500 py-4">
                   No se encontraron resultados.
                 </td>
               </tr>
+            ) : (
+              usuariosVisibles.map((usuario) => (
+                <tr key={usuario.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-2 text-sm text-gray-800">{usuario.nombre}</td>
+                  <td className="px-4 py-2 text-sm text-gray-600">{usuario.correo}</td>
+                  <td className="px-4 py-2 text-sm text-gray-600">{usuario.rol}</td>
+                  <td className="px-4 py-2 text-sm text-right space-x-2">
+                    <button className="text-blue-600 hover:underline text-sm">Editar</button>
+                    <button
+                      onClick={() => handleEliminar(usuario.id)}
+                      className="text-red-600 hover:underline text-sm"
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
