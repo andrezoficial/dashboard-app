@@ -1,25 +1,27 @@
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import DashboardLayout from "./components/DashboardLayout";
+import DashboardPage from "./pages/DashboardPage";
+import UsuariosPage from "./pages/UsuariosPage";
+import ConfiguracionPage from "./pages/ConfiguracionPage";
 
-function App() {
+export default function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        {/* Redirección desde la raíz */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+        {/* Rutas dentro del layout */}
+        <Route path="/" element={<DashboardLayout />}>
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="usuarios" element={<UsuariosPage />} />
+          <Route path="configuracion" element={<ConfiguracionPage />} />
+        </Route>
+
+        {/* Ruta para no encontrados */}
+        <Route path="*" element={<div className="p-6 text-red-500">Página no encontrada</div>} />
+      </Routes>
+    </Router>
   );
 }
-
-export default App;

@@ -1,0 +1,134 @@
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, Outlet } from "react-router-dom";
+import { FiHome, FiUsers, FiSettings, FiMenu, FiChevronLeft } from "react-icons/fi";
+
+export default function DashboardLayout({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) setSidebarOpen(true);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const menuItems = [
+    { name: "Dashboard", icon: <FiHome size={20} />, path: "/dashboard" },
+    { name: "Usuarios", icon: <FiUsers size={20} />, path: "/usuarios" },
+    { name: "Configuración", icon: <FiSettings size={20} />, path: "/configuracion" },
+  ];
+
+  const getActiveName = () => {
+    const current = menuItems.find((item) => location.pathname.startsWith(item.path));
+    return current ? current.name : "";
+  };
+
+  return (
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
+      {/* Sidebar */}
+      <aside
+        className={`bg-white border-r border-gray-200 flex flex-col transition-width duration-300 ease-in-out fixed md:static z-30 top-0 left-0 h-full ${
+          sidebarOpen ? "w-64" : "w-16"
+        } ${isMobile ? (sidebarOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}`}
+        style={{ transitionProperty: "width, transform" }}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <h1 className={`text-xl font-bold text-blue-600 ${sidebarOpen ? "block" : "hidden"}`}>
+            Admin
+          </h1>
+          <button
+            className="p-2 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Cerrar sidebar"
+          >
+            <FiChevronLeft size={20} />
+          </button>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto mt-4 scrollbar-hide">
+          <ul>
+            {menuItems.map((item) => (
+              <Link
+                key={item.name}
+                to={item.path}
+                onClick={() => isMobile && setSidebarOpen(false)}
+              >
+                <li
+                  className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors rounded ${
+                    location.pathname.startsWith(item.path)
+                      ? "bg-blue-200 text-blue-800"
+                      : "hover:bg-blue-100"
+                  }`}
+                >
+                  <span className="text-blue-600">{item.icon}</span>
+                  <span className={`${sidebarOpen ? "inline" : "hidden"} font-medium`}>
+                    {item.name}
+                  </span>
+                </li>
+              </Link>
+            ))}
+          </ul>
+        </nav>
+      </aside>
+
+      {/* Overlay oscuro móvil con animación */}
+      <div
+        className={`fixed inset-0 bg-black z-20 transition-opacity duration-300 ${
+          isMobile && sidebarOpen ? "opacity-50 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* Contenido principal */}
+      <div className="flex flex-col flex-1 md:ml-64">
+        {/* Navbar móvil */}
+        {isMobile && (
+          <header className="flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 shadow-sm fixed top-0 left-0 right-0 z-30">
+            <button
+              className="p-2 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Abrir sidebar"
+            >
+              <FiMenu size={24} />
+            </button>
+            <h2 className="text-xl font-semibold text-gray-700">{getActiveName()}</h2>
+            <button className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Logout
+            </button>
+          </header>
+        )}
+
+        {/* Navbar desktop */}
+        {!isMobile && (
+          <header className="flex items-center justify-between bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+            <h2 className="text-2xl font-semibold text-gray-700">{getActiveName()}</h2>
+            <button className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Logout
+            </button>
+          </header>
+        )}
+
+        {/* Contenido dinámico */}
+        <main className={`flex-1 overflow-auto p-6 ${isMobile ? "pt-16" : ""}`}>
+  <Outlet />
+</main>
+      </div>
+
+      <style jsx global>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+    </div>
+  );
+}
