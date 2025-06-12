@@ -3,6 +3,8 @@ import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { FiHome, FiUsers, FiSettings, FiMenu, FiChevronLeft } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext"; // ✅ Importar contexto
 import { toast } from "react-toastify"; // Asegúrate de tener esto importado
+import { FiUser, FiCalendar } from "react-icons/fi";
+
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -30,6 +32,9 @@ export default function DashboardLayout() {
   const menuItems = [
     { name: "Dashboard", icon: <FiHome size={20} />, path: "/dashboard" },
     { name: "Usuarios", icon: <FiUsers size={20} />, path: "/usuarios" },
+    
+    { name: "Pacientes", icon: <FiUser size={20} />, path: "/pacientes" },
+    { name: "Citas", icon: <FiCalendar size={20} />, path: "/citas" },
     { name: "Configuración", icon: <FiSettings size={20} />, path: "/configuracion" },
   ];
 

@@ -4,6 +4,8 @@ import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./components/DashboardLayout";
 import DashboardPage from "./pages/DashboardPage";
 import UsuariosPage from "./pages/UsuariosPage";
+import Pacientes from "./pages/Pacientes";
+import Citas from "./pages/Citas";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
 import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
@@ -39,6 +41,8 @@ export default function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="usuarios" element={<UsuariosPage />} />
           <Route path="configuracion" element={<ConfiguracionPage />} />
+          <Route path="pacientes" element={<Pacientes />} />
+          <Route path="citas" element={<Citas />} />
           <Route path="*" element={<div className="p-6 text-red-500">Página no encontrada</div>} />
         </Route>
 
