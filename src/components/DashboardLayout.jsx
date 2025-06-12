@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation, Outlet } from "react-router-dom";
+import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { FiHome, FiUsers, FiSettings, FiMenu, FiChevronLeft } from "react-icons/fi";
+import { useAuth } from "../context/AuthContext"; // ✅ Importar contexto
+import { toast } from "react-toastify"; // Asegúrate de tener esto importado
 
-export default function DashboardLayout({ children }) {
+export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate(); // para redireccionar después de logout
+  const { logout } = useAuth(); // ✅ Usar función logout del contexto
 
   useEffect(() => {
     const handleResize = () => {
@@ -16,6 +20,12 @@ export default function DashboardLayout({ children }) {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const handleLogout = () => {
+  logout();
+  toast.info("Sesión cerrada"); // Mostrar notificación
+  navigate("/login", { replace: true });
+};
 
   const menuItems = [
     { name: "Dashboard", icon: <FiHome size={20} />, path: "/dashboard" },
@@ -98,7 +108,10 @@ export default function DashboardLayout({ children }) {
               <FiMenu size={24} />
             </button>
             <h2 className="text-xl font-semibold text-gray-700">{getActiveName()}</h2>
-            <button className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button
+              onClick={handleLogout} // llamar a handleLogout con navegación
+              className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               Logout
             </button>
           </header>
@@ -108,7 +121,10 @@ export default function DashboardLayout({ children }) {
         {!isMobile && (
           <header className="flex items-center justify-between bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
             <h2 className="text-2xl font-semibold text-gray-700">{getActiveName()}</h2>
-            <button className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button
+              onClick={handleLogout} // llamar a handleLogout con navegación
+              className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               Logout
             </button>
           </header>
@@ -116,8 +132,8 @@ export default function DashboardLayout({ children }) {
 
         {/* Contenido dinámico */}
         <main className={`flex-1 overflow-auto p-6 ${isMobile ? "pt-16" : ""}`}>
-  <Outlet />
-</main>
+          <Outlet />
+        </main>
       </div>
 
       <style jsx global>{`

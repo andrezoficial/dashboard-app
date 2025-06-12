@@ -23,7 +23,7 @@ export default function UsuariosPage() {
     const fetchUsuarios = async () => {
       try {
         setLoading(true);
-        const res = await axios.get("http://localhost:4000/usuarios");
+        const res = await axios.get("http://localhost:3001/usuarios");
         setUsuarios(res.data);
         setError(null);
       } catch (err) {
