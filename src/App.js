@@ -4,10 +4,13 @@ import DashboardLayout from "./components/DashboardLayout";
 import DashboardPage from "./pages/DashboardPage";
 import UsuariosPage from "./pages/UsuariosPage";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function App() {
   return (
     <Router>
+      <ToastContainer position="top-right" autoClose={3000} />
       <Routes>
         {/* Redirección desde la raíz */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -23,5 +26,6 @@ export default function App() {
         <Route path="*" element={<div className="p-6 text-red-500">Página no encontrada</div>} />
       </Routes>
     </Router>
+    
   );
 }

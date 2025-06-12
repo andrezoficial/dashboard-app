@@ -10,6 +10,24 @@
       "id": "2",
       "nombre": "María López",
       "correo": "maria@example.com",
+      "rol": "Lector"
+    },
+    {
+      "id": "85a8",
+      "nombre": "andres suarez",
+      "correo": "andres1997rez@gmail.com",
+      "rol": "Administrador"
+    },
+    {
+      "id": "27a9",
+      "nombre": "laura montañez",
+      "correo": "laura164@gmail.com",
+      "rol": "Administrador"
+    },
+    {
+      "id": "2a05",
+      "nombre": "carlos",
+      "correo": "carlos1654@gmail.com",
       "rol": "Editor"
     }
   ]
