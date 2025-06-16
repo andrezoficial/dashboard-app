@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/admin-dashboard/static/css/main.69397e66.css",
-    "main.js": "/admin-dashboard/static/js/main.69c6576a.js",
-    "static/js/453.fadc3cd2.chunk.js": "/admin-dashboard/static/js/453.fadc3cd2.chunk.js",
-    "index.html": "/admin-dashboard/index.html",
-    "main.69397e66.css.map": "/admin-dashboard/static/css/main.69397e66.css.map",
-    "main.69c6576a.js.map": "/admin-dashboard/static/js/main.69c6576a.js.map",
-    "453.fadc3cd2.chunk.js.map": "/admin-dashboard/static/js/453.fadc3cd2.chunk.js.map"
+    "main.css": "/dashboard-app/static/css/main.69397e66.css",
+    "main.js": "/dashboard-app/static/js/main.c01f3028.js",
+    "static/js/453.fadc3cd2.chunk.js": "/dashboard-app/static/js/453.fadc3cd2.chunk.js",
+    "index.html": "/dashboard-app/index.html",
+    "main.69397e66.css.map": "/dashboard-app/static/css/main.69397e66.css.map",
+    "main.c01f3028.js.map": "/dashboard-app/static/js/main.c01f3028.js.map",
+    "453.fadc3cd2.chunk.js.map": "/dashboard-app/static/js/453.fadc3cd2.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.69397e66.css",
-    "static/js/main.69c6576a.js"
+    "static/js/main.c01f3028.js"
   ]
 }
