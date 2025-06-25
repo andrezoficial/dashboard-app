@@ -7,16 +7,19 @@ export default function UserForm({ onSubmit, onCancel, usuarioEditando }) {
   const [nombre, setNombre] = useState("");
   const [correo, setCorreo] = useState("");
   const [rol, setRol] = useState(roles[0]);
+  const [password, setPassword] = useState(""); // NUEVO campo password
 
   useEffect(() => {
     if (usuarioEditando) {
       setNombre(usuarioEditando.nombre || "");
       setCorreo(usuarioEditando.correo || "");
       setRol(usuarioEditando.rol || roles[0]);
+      setPassword(""); // no llenar password en edición
     } else {
       setNombre("");
       setCorreo("");
       setRol(roles[0]);
+      setPassword("");
     }
   }, [usuarioEditando]);
 
@@ -34,17 +37,32 @@ export default function UserForm({ onSubmit, onCancel, usuarioEditando }) {
       return;
     }
 
+    // Validar password: obligatorio si es creación (no hay usuarioEditando)
+    if (!usuarioEditando && !password) {
+      toast.error("La contraseña es obligatoria para un nuevo usuario");
+      return;
+    }
+
+    // En edición, password es opcional, si está vacío no se envía
     const usuarioData = usuarioEditando
-      ? { ...usuarioEditando, nombre, correo, rol }
-      : { nombre, correo, rol };
+      ? {
+          ...usuarioEditando,
+          nombre,
+          correo,
+          rol,
+          ...(password ? { password } : {}), // solo si password tiene valor
+        }
+      : { nombre, correo, rol, password };
 
     onSubmit(usuarioData);
+
     toast.success(usuarioEditando ? "Usuario actualizado" : "Usuario creado");
 
     if (!usuarioEditando) {
       setNombre("");
       setCorreo("");
       setRol(roles[0]);
+      setPassword("");
     }
   };
 
@@ -100,6 +118,22 @@ export default function UserForm({ onSubmit, onCancel, usuarioEditando }) {
             </option>
           ))}
         </select>
+      </div>
+
+      <div>
+        <label className="block text-gray-700 mb-1" htmlFor="password">
+          {usuarioEditando ? "Nueva contraseña (opcional)" : "Contraseña"}
+        </label>
+        <input
+          id="password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder={usuarioEditando ? "Déjalo vacío para no cambiar" : ""}
+          // required solo si es nuevo usuario
+          {...(!usuarioEditando && { required: true })}
+        />
       </div>
 
       <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
