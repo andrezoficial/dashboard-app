@@ -29,7 +29,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await axios.post("https://backend-dashboard-v2.onrender.com/api/login", {
+      const res = axios.post("https://backend-dashboard-v2.onrender.com/api/auth/login", {
         email: correo,
         password,
       });
