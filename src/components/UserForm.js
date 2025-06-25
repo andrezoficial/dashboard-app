@@ -12,7 +12,7 @@ export default function UserForm({ onSubmit, onCancel, usuarioEditando }) {
   useEffect(() => {
     if (usuarioEditando) {
       setNombre(usuarioEditando.nombre || "");
-      setCorreo(usuarioEditando.correo || "");
+      setCorreo(usuarioEditando.email || ""); // CORREGIDO: usa email aquí para llenar el campo
       setRol(usuarioEditando.rol || roles[0]);
       setPassword(""); // no llenar password en edición
     } else {
@@ -48,11 +48,11 @@ export default function UserForm({ onSubmit, onCancel, usuarioEditando }) {
       ? {
           ...usuarioEditando,
           nombre,
-          correo,
+          email: correo,       // CORREGIDO: cambia "correo" por "email" aquí
           rol,
           ...(password ? { password } : {}), // solo si password tiene valor
         }
-      : { nombre, correo, rol, password };
+      : { nombre, email: correo, rol, password };  // CORREGIDO aquí también
 
     onSubmit(usuarioData);
 
@@ -131,7 +131,6 @@ export default function UserForm({ onSubmit, onCancel, usuarioEditando }) {
           onChange={(e) => setPassword(e.target.value)}
           className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder={usuarioEditando ? "Déjalo vacío para no cambiar" : ""}
-          // required solo si es nuevo usuario
           {...(!usuarioEditando && { required: true })}
         />
       </div>
