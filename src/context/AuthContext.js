@@ -3,13 +3,8 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    // Intenta cargar user de localStorage
-    const userData = localStorage.getItem("user");
-    return userData ? JSON.parse(userData) : null;
-  });
-
-  const [token, setToken] = useState(() => localStorage.getItem("token") || null);
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
 
   const isAuthenticated = !!user && !!token;
 
@@ -26,6 +21,16 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
   };
+
+  useEffect(() => {
+    // Al cargar la app, intenta restaurar sesión
+    const storedUser = localStorage.getItem("user");
+    const storedToken = localStorage.getItem("token");
+    if (storedUser && storedToken) {
+      setUser(JSON.parse(storedUser));
+      setToken(storedToken);
+    }
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, token, isAuthenticated, login, logout }}>
