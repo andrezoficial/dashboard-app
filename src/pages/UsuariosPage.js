@@ -4,6 +4,9 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import UserForm from "../components/UserForm";
 
+// 🔗 URL base del backend (Render)
+const API_URL = "https://backend-dashboard-v2.onrender.com/api";
+
 const roles = ["Todos", "Administrador", "Editor", "Lector"];
 const pageSize = 3;
 
@@ -23,7 +26,7 @@ export default function UsuariosPage() {
     const fetchUsuarios = async () => {
       try {
         setLoading(true);
-        const res = await axios.get("http://localhost:3001/usuarios");
+        const res = await axios.get(`${API_URL}/usuarios`);
         setUsuarios(res.data);
         setError(null);
       } catch (err) {
@@ -38,7 +41,7 @@ export default function UsuariosPage() {
 
   const usuariosFiltrados = usuarios.filter((usuario) => {
     const cumpleBusqueda =
-      `${usuario.nombre} ${usuario.correo} ${usuario.rol}`
+      `${usuario.nombre} ${usuario.email} ${usuario.rol}`
         .toLowerCase()
         .includes(busqueda.toLowerCase());
     const cumpleFiltroRol = filtroRol === "Todos" ? true : usuario.rol === filtroRol;
@@ -59,8 +62,8 @@ export default function UsuariosPage() {
   const handleEliminar = async (id) => {
     if (!window.confirm("¿Estás seguro de eliminar este usuario?")) return;
     try {
-      await axios.delete(`http://localhost:4000/usuarios/${id}`);
-      setUsuarios((prev) => prev.filter((u) => u.id !== id));
+      await axios.delete(`${API_URL}/usuarios/${id}`);
+      setUsuarios((prev) => prev.filter((u) => u._id !== id));
       toast.success("Usuario eliminado correctamente");
     } catch {
       toast.error("Error eliminando usuario");
@@ -81,15 +84,15 @@ export default function UsuariosPage() {
     try {
       if (usuarioEditando) {
         const res = await axios.put(
-          `http://localhost:4000/usuarios/${usuarioEditando.id}`,
+          `${API_URL}/usuarios/${usuarioEditando._id}`,
           usuarioData
         );
         setUsuarios((prev) =>
-          prev.map((u) => (u.id === usuarioEditando.id ? res.data : u))
+          prev.map((u) => (u._id === usuarioEditando._id ? res.data : u))
         );
         toast.success("Usuario actualizado correctamente");
       } else {
-        const res = await axios.post("http://localhost:4000/usuarios", usuarioData);
+        const res = await axios.post(`${API_URL}/usuarios`, usuarioData);
         setUsuarios((prev) => [...prev, res.data]);
         toast.success("Usuario creado exitosamente");
       }
@@ -167,15 +170,9 @@ export default function UsuariosPage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600">
-                Nombre
-              </th>
-              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600">
-                Correo
-              </th>
-              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600">
-                Rol
-              </th>
+              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600">Nombre</th>
+              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600">Correo</th>
+              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600">Rol</th>
               <th className="px-4 py-2"></th>
             </tr>
           </thead>
@@ -188,9 +185,9 @@ export default function UsuariosPage() {
               </tr>
             ) : (
               usuariosVisibles.map((usuario) => (
-                <tr key={usuario.id} className="hover:bg-gray-50">
+                <tr key={usuario._id} className="hover:bg-gray-50">
                   <td className="px-4 py-2 text-sm text-gray-800">{usuario.nombre}</td>
-                  <td className="px-4 py-2 text-sm text-gray-600">{usuario.correo}</td>
+                  <td className="px-4 py-2 text-sm text-gray-600">{usuario.email}</td>
                   <td className="px-4 py-2 text-sm text-gray-600">{usuario.rol}</td>
                   <td className="px-4 py-2 text-sm text-right space-x-2">
                     <button
@@ -200,7 +197,7 @@ export default function UsuariosPage() {
                       Editar
                     </button>
                     <button
-                      onClick={() => handleEliminar(usuario.id)}
+                      onClick={() => handleEliminar(usuario._id)}
                       className="text-red-600 hover:underline text-sm"
                     >
                       Eliminar

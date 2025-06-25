@@ -1,115 +1,123 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 
-const mockPacientes = [
-  { id: 1, nombre: "Juan Pérez" },
-  { id: 2, nombre: "Ana López" },
-];
+const API_URL = "https://citas-api-91vc.onrender.com"; // Cambia a tu URL real
 
 export default function Citas() {
   const [citas, setCitas] = useState([]);
-  const [filtro, setFiltro] = useState("");
   const [form, setForm] = useState({
-    id: null,
-    pacienteId: "",
+    paciente: "",
     fecha: "",
     hora: "",
-    estado: "pendiente",
+    estado: "Pendiente",
   });
+  const [editId, setEditId] = useState(null);
+  const [filtro, setFiltro] = useState("");
 
+  // Cargar citas al inicio
   useEffect(() => {
-    // Simulación de llamada a API
-    const mockCitas = [
-      {
-        id: 1,
-        pacienteId: 1,
-        fecha: "2025-06-15",
-        hora: "10:00",
-        estado: "confirmada",
-      },
-      {
-        id: 2,
-        pacienteId: 2,
-        fecha: "2025-06-16",
-        hora: "11:30",
-        estado: "pendiente",
-      },
-    ];
-    setCitas(mockCitas);
+    fetchCitas();
   }, []);
 
-  const getNombrePaciente = (id) => {
-    const paciente = mockPacientes.find((p) => p.id === Number(id));
-    return paciente ? paciente.nombre : "Desconocido";
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (form.id) {
-      // Editar
-      setCitas((prev) =>
-        prev.map((c) => (c.id === form.id ? form : c))
-      );
-    } else {
-      // Crear
-      const nuevaCita = {
-        ...form,
-        id: Date.now(),
-      };
-      setCitas((prev) => [...prev, nuevaCita]);
+  const fetchCitas = async () => {
+    try {
+      const res = await axios.get(API_URL);
+      setCitas(res.data);
+    } catch (error) {
+      alert("Error cargando citas");
     }
-    setForm({ id: null, pacienteId: "", fecha: "", hora: "", estado: "pendiente" });
   };
 
+  // Manejar cambios en formulario
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // Crear o actualizar cita
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editId) {
+        // Editar
+        await axios.put(`${API_URL}/${editId}`, form);
+        alert("Cita actualizada");
+      } else {
+        // Crear
+        await axios.post(API_URL, form);
+        alert("Cita creada");
+      }
+      setForm({ paciente: "", fecha: "", hora: "", estado: "Pendiente" });
+      setEditId(null);
+      fetchCitas();
+    } catch (error) {
+      alert("Error guardando cita");
+    }
+  };
+
+  // Cargar datos para editar
   const handleEdit = (cita) => {
-    setForm(cita);
+    setForm({
+      paciente: cita.paciente,
+      fecha: cita.fecha,
+      hora: cita.hora,
+      estado: cita.estado,
+    });
+    setEditId(cita.id);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("¿Cancelar esta cita?")) {
-  setCitas((prev) => prev.filter((c) => c.id !== id));
-}
+  // Eliminar cita
+  const handleDelete = async (id) => {
+    if (window.confirm("¿Eliminar esta cita?")) {
+      try {
+        await axios.delete(`${API_URL}/${id}`);
+        alert("Cita eliminada");
+        fetchCitas();
+      } catch (error) {
+        alert("Error eliminando cita");
+      }
+    }
   };
 
-  const citasFiltradas = citas.filter((cita) => {
-    const paciente = getNombrePaciente(cita.pacienteId).toLowerCase();
-    return paciente.includes(filtro.toLowerCase());
-  });
+  // Filtrar citas por paciente o fecha
+  const citasFiltradas = citas.filter(
+    (cita) =>
+      cita.paciente.toLowerCase().includes(filtro.toLowerCase()) ||
+      cita.fecha.includes(filtro)
+  );
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Gestión de Citas</h1>
+    <div className="max-w-4xl mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Gestión de Citas Médicas</h1>
 
-      {/* Filtro */}
       <input
         type="text"
-        placeholder="Buscar por paciente"
-        className="border p-2 mb-4 w-full md:w-1/2"
+        placeholder="Filtrar por paciente o fecha (YYYY-MM-DD)"
         value={filtro}
         onChange={(e) => setFiltro(e.target.value)}
+        className="border p-2 mb-4 w-full"
       />
 
-      {/* Tabla */}
-      <table className="w-full table-auto border border-collapse mb-6">
+      <table className="w-full border-collapse border border-gray-300 mb-6">
         <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">Paciente</th>
-            <th className="border p-2">Fecha</th>
-            <th className="border p-2">Hora</th>
-            <th className="border p-2">Estado</th>
-            <th className="border p-2">Acciones</th>
+          <tr className="bg-gray-200">
+            <th className="border border-gray-300 p-2">Paciente</th>
+            <th className="border border-gray-300 p-2">Fecha</th>
+            <th className="border border-gray-300 p-2">Hora</th>
+            <th className="border border-gray-300 p-2">Estado</th>
+            <th className="border border-gray-300 p-2">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {citasFiltradas.map((cita) => (
             <tr key={cita.id}>
-              <td className="border p-2">{getNombrePaciente(cita.pacienteId)}</td>
-              <td className="border p-2">{cita.fecha}</td>
-              <td className="border p-2">{cita.hora}</td>
-              <td className="border p-2">{cita.estado}</td>
-              <td className="border p-2 flex gap-2">
+              <td className="border border-gray-300 p-2">{cita.paciente}</td>
+              <td className="border border-gray-300 p-2">{cita.fecha}</td>
+              <td className="border border-gray-300 p-2">{cita.hora}</td>
+              <td className="border border-gray-300 p-2">{cita.estado}</td>
+              <td className="border border-gray-300 p-2 space-x-2">
                 <button
                   onClick={() => handleEdit(cita)}
-                  className="bg-yellow-400 text-white px-2 py-1 rounded"
+                  className="bg-yellow-400 px-2 py-1 rounded"
                 >
                   Editar
                 </button>
@@ -122,56 +130,73 @@ export default function Citas() {
               </td>
             </tr>
           ))}
+          {citasFiltradas.length === 0 && (
+            <tr>
+              <td colSpan="5" className="text-center p-4 text-gray-500">
+                No hay citas
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
 
-      {/* Formulario */}
-      <h2 className="text-xl font-semibold mb-2">
-        {form.id ? "Editar Cita" : "Nueva Cita"}
-      </h2>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <select
+      <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
+        <h2 className="text-xl font-semibold">
+          {editId ? "Editar Cita" : "Nueva Cita"}
+        </h2>
+        <input
+          type="text"
+          name="paciente"
+          placeholder="Paciente"
+          value={form.paciente}
+          onChange={handleChange}
           required
-          value={form.pacienteId}
-          onChange={(e) => setForm({ ...form, pacienteId: e.target.value })}
-          className="border p-2"
-        >
-          <option value="">Seleccionar paciente</option>
-          {mockPacientes.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nombre}
-            </option>
-          ))}
-        </select>
+          className="border p-2 w-full"
+        />
         <input
           type="date"
-          required
+          name="fecha"
           value={form.fecha}
-          onChange={(e) => setForm({ ...form, fecha: e.target.value })}
-          className="border p-2"
+          onChange={handleChange}
+          required
+          className="border p-2 w-full"
         />
         <input
           type="time"
-          required
+          name="hora"
           value={form.hora}
-          onChange={(e) => setForm({ ...form, hora: e.target.value })}
-          className="border p-2"
+          onChange={handleChange}
+          required
+          className="border p-2 w-full"
         />
         <select
+          name="estado"
           value={form.estado}
-          onChange={(e) => setForm({ ...form, estado: e.target.value })}
-          className="border p-2"
+          onChange={handleChange}
+          className="border p-2 w-full"
         >
-          <option value="pendiente">Pendiente</option>
-          <option value="confirmada">Confirmada</option>
-          <option value="cancelada">Cancelada</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="Confirmada">Confirmada</option>
+          <option value="Cancelada">Cancelada</option>
         </select>
         <button
           type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded col-span-1 md:col-span-2"
+          className="bg-blue-600 text-white px-4 py-2 rounded"
         >
-          {form.id ? "Actualizar Cita" : "Crear Cita"}
+          {editId ? "Actualizar" : "Crear"}
         </button>
+        {editId && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditId(null);
+              setForm({ paciente: "", fecha: "", hora: "", estado: "Pendiente" });
+            }}
+            className="ml-2 bg-gray-400 text-white px-4 py-2 rounded"
+          >
+            Cancelar edición
+          </button>
+        )}
       </form>
     </div>
   );
