@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./components/DashboardLayout";
@@ -10,10 +10,12 @@ import ConfiguracionPage from "./pages/ConfiguracionPage";
 import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 
-import { AuthContext } from "./context/AuthContext"; // ✅ importar contexto
+import { useAuth } from "./context/AuthContext";
+import PrivateRoute from "./components/PrivateRoute";
+import AdminRoute from "./components/AdminRoute";
 
 export default function App() {
-  const { isAuthenticated, login } = useContext(AuthContext); // usar contexto
+  const { isAuthenticated } = useAuth();
 
   return (
     <Router>
@@ -22,31 +24,53 @@ export default function App() {
         <Route
           path="/login"
           element={
-            isAuthenticated ? (
-              <Navigate to="/dashboard" replace />
-            ) : (
-              // Pasamos la función login para que LoginPage pueda llamar al login en el contexto
-              <LoginPage onLoginSuccess={login} />
-            )
+            isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />
           }
         />
 
         <Route
           path="/"
           element={
-            isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" replace />
+            <PrivateRoute>
+              <DashboardLayout />
+            </PrivateRoute>
           }
         >
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="usuarios" element={<UsuariosPage />} />
-          <Route path="configuracion" element={<ConfiguracionPage />} />
+
+          <Route
+            path="usuarios"
+            element={
+              <AdminRoute>
+                <UsuariosPage />
+              </AdminRoute>
+            }
+          />
+
           <Route path="pacientes" element={<Pacientes />} />
-          <Route path="citas" element={<Citas />} />
+
+          <Route
+            path="citas"
+            element={
+              <AdminRoute>
+                <Citas />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="configuracion"
+            element={
+              <AdminRoute>
+                <ConfiguracionPage />
+              </AdminRoute>
+            }
+          />
+
           <Route path="*" element={<div className="p-6 text-red-500">Página no encontrada</div>} />
         </Route>
 
-        {/* Catch all route for unauthenticated users */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
