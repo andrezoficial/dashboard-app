@@ -1,47 +1,53 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
+import axios from "axios";
+import { useAuth } from "./AuthContext"; // importa tu contexto de auth
+import { useNavigate } from "react-router-dom";
 
-export default function LoginPage({ onLoginSuccess }) {
-  // Estados para almacenar valores del formulario
+export default function LoginPage() {
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false); // Para mostrar que está cargando
+  const [loading, setLoading] = useState(false);
 
-  // Función que se ejecuta al enviar el formulario
+  const { login } = useAuth(); // obtenemos la función login del contexto
+  const navigate = useNavigate();
+
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Para evitar que la página se recargue
+    e.preventDefault();
 
-    // Validar que los campos no estén vacíos
     if (!correo.trim() || !password.trim()) {
       toast.error("Correo y contraseña son obligatorios");
       return;
     }
 
-    // Validar formato de correo con expresión regular simple
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(correo)) {
       toast.error("Correo no es válido");
       return;
     }
 
-    setLoading(true); // Mostrar que está enviando
+    setLoading(true);
 
     try {
-      // Aquí iría la llamada real a tu API, por ahora simulamos una espera
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await axios.post("https://backend-dashboard-v2.onrender.com/api/login", {
+        email: correo,
+        password,
+      });
 
-      // Simulación de validación de usuario
-      if (correo === "admin@admin.com" && password === "admin123") {
-        toast.success("Login exitoso");
-        // Este callback se ejecuta para avisar que el login fue exitoso
-        onLoginSuccess();
-      } else {
-        toast.error("Credenciales incorrectas");
-      }
+      // El backend responde con { user, token }
+      const { user, token } = res.data;
+
+      // Guardamos en contexto
+      login(user, token);
+
+      toast.success("Login exitoso");
+
+      // Redirigir a dashboard
+      navigate("/dashboard");
     } catch (error) {
-      toast.error("Error al iniciar sesión");
+      toast.error("Credenciales incorrectas");
     } finally {
-      setLoading(false); // Se terminó la petición
+      setLoading(false);
     }
   };
 
@@ -52,30 +58,27 @@ export default function LoginPage({ onLoginSuccess }) {
     >
       <h2 className="text-2xl mb-4 text-center font-semibold">Iniciar Sesión</h2>
 
-      {/* Campo correo */}
       <input
         type="email"
         placeholder="Correo"
         value={correo}
         onChange={(e) => setCorreo(e.target.value)}
         className="w-full mb-3 p-2 border rounded"
-        disabled={loading} // Deshabilitar mientras carga
+        disabled={loading}
       />
 
-      {/* Campo contraseña */}
       <input
         type="password"
         placeholder="Contraseña"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         className="w-full mb-4 p-2 border rounded"
-        disabled={loading} // Deshabilitar mientras carga
+        disabled={loading}
       />
 
-      {/* Botón enviar */}
       <button
         type="submit"
-        disabled={loading} // Deshabilitar mientras carga
+        disabled={loading}
         className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
       >
         {loading ? "Cargando..." : "Ingresar"}
