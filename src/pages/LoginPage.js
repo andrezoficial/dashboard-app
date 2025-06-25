@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
-import { useAuth } from "./AuthContext"; // importa tu contexto de auth
+import { useAuth } from "../context/AuthContext"; // importa tu contexto de auth
 import { useNavigate } from "react-router-dom";
 
 export default function LoginPage() {
