@@ -35,10 +35,10 @@ export default function LoginPage() {
       });
 
       // El backend responde con { user, token }
-      const { user, token } = res.data;
+      const { usuario, token } = res.data;
 
       // Guardamos en contexto
-      login(user, token);
+     login(usuario, token);
 
       toast.success("Login exitoso");
 
