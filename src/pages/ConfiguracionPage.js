@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import jwtDecode from "jwt-decode";
+import jwt_decode from "jwt-decode";
 
 const API_URL = "https://backend-dashboard-v2.onrender.com/api/configuracion";
+
 const token = localStorage.getItem("token");
-const decoded = jwtDecode(token);
+
 let usuarioId = null;
 if (token) {
-  const decoded = jwt_decode(token);
-  usuarioId = decoded.id; // o decoded._id, revisa tu payload
+  try {
+    const decoded = jwt_decode(token);
+    usuarioId = decoded.id || decoded._id; // revisa cuál es el correcto
+  } catch {
+    usuarioId = null;
+  }
 }
 
 export default function Configuracion() {
   const [activeTab, setActiveTab] = useState("perfil");
 
-  // Estados perfil (si quieres puedes cargarlos desde backend en useEffect)
   const [nombre, setNombre] = useState("Admin");
   const [email, setEmail] = useState("admin@admin.com");
 
@@ -26,28 +30,23 @@ export default function Configuracion() {
   const [notificaciones, setNotificaciones] = useState(true);
   const [role, setRole] = useState("Admin");
 
-  // Aquí debes obtener el usuarioId de alguna forma, por ejemplo del token
-  // Supongamos que tienes una función para decodificarlo o guardarlo en localStorage
-  const usuarioId = localStorage.getItem("usuarioId"); // Ajusta según tu implementación
-
   const config = {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   };
 
-  // Cargar configuración inicial del backend
   useEffect(() => {
     if (!usuarioId) return;
+
     axios
-      .get(`${API_URL}/${usuarioId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      .get(`${API_URL}/${usuarioId}`, config)
       .then((res) => {
         const configData = res.data;
         setTemaOscuro(configData.temaOscuro ?? false);
         setNotificaciones(configData.notificaciones ?? true);
         setRole(configData.rolSeleccionado || "Admin");
+        // Si tienes nombre y email en configData, también setéalos aquí
       })
       .catch((err) => {
         console.error("Error al cargar configuración", err);
@@ -67,10 +66,10 @@ export default function Configuracion() {
           temaOscuro,
           notificaciones,
           rolSeleccionado: role,
+          nombre,
+          email,
         },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        config
       );
       alert("Configuración guardada correctamente");
     } catch (error) {
@@ -79,7 +78,6 @@ export default function Configuracion() {
     }
   };
 
-  // Para cambiar contraseña puedes usar otra ruta si la tienes en backend
   const handleChangePassword = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
@@ -88,7 +86,7 @@ export default function Configuracion() {
     }
     try {
       await axios.put(
-        `${API_URL}/password`, // Asumo que tienes esta ruta en backend
+        `${API_URL}/password`,
         {
           passwordActual: currentPassword,
           nuevaPassword: newPassword,
@@ -135,11 +133,7 @@ export default function Configuracion() {
       </nav>
 
       {activeTab === "perfil" && (
-        <form
-          onSubmit={handleSaveConfiguracion}
-          className="space-y-4"
-          // Aquí puedes separar la actualización de perfil si tienes ruta dedicada
-        >
+        <form onSubmit={handleSaveConfiguracion} className="space-y-4">
           <div>
             <label className="block mb-1 font-medium">Nombre</label>
             <input
