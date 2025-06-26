@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import jwt_decode from "jwt-decode";
 
 const API_URL = "https://backend-dashboard-v2.onrender.com/api/configuracion";
 const token = localStorage.getItem("token");
+
+let usuarioId = null;
+if (token) {
+  const decoded = jwt_decode(token);
+  usuarioId = decoded.id; // o decoded._id, revisa tu payload
+}
 
 export default function Configuracion() {
   const [activeTab, setActiveTab] = useState("perfil");
@@ -33,20 +40,20 @@ export default function Configuracion() {
   useEffect(() => {
     if (!usuarioId) return;
     axios
-      .get(`${API_URL}/${usuarioId}`, config)
+      .get(`${API_URL}/${usuarioId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       .then((res) => {
         const configData = res.data;
         setTemaOscuro(configData.temaOscuro ?? false);
         setNotificaciones(configData.notificaciones ?? true);
         setRole(configData.rolSeleccionado || "Admin");
-        // Si quieres traer nombre y email del perfil, haz otra petición
       })
       .catch((err) => {
         console.error("Error al cargar configuración", err);
       });
-  }, [usuarioId]);
+  }, []);
 
-  // Función para actualizar configuración general + rol + perfil (si quieres)
   const handleSaveConfiguracion = async (e) => {
     e.preventDefault();
     if (!usuarioId) {
@@ -60,9 +67,10 @@ export default function Configuracion() {
           temaOscuro,
           notificaciones,
           rolSeleccionado: role,
-          // Puedes agregar nombre y email aquí si el backend soporta
         },
-        config
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       alert("Configuración guardada correctamente");
     } catch (error) {
