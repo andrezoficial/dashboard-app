@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const API_URL = "https://backend-dashboard-v2.onrender.com/api/configuracion";
@@ -7,6 +7,7 @@ const token = localStorage.getItem("token");
 export default function Configuracion() {
   const [activeTab, setActiveTab] = useState("perfil");
 
+  // Estados perfil (si quieres puedes cargarlos desde backend en useEffect)
   const [nombre, setNombre] = useState("Admin");
   const [email, setEmail] = useState("admin@admin.com");
 
@@ -16,8 +17,11 @@ export default function Configuracion() {
 
   const [temaOscuro, setTemaOscuro] = useState(false);
   const [notificaciones, setNotificaciones] = useState(true);
-
   const [role, setRole] = useState("Admin");
+
+  // Aquí debes obtener el usuarioId de alguna forma, por ejemplo del token
+  // Supongamos que tienes una función para decodificarlo o guardarlo en localStorage
+  const usuarioId = localStorage.getItem("usuarioId"); // Ajusta según tu implementación
 
   const config = {
     headers: {
@@ -25,16 +29,49 @@ export default function Configuracion() {
     },
   };
 
-  const handleSavePerfil = async (e) => {
+  // Cargar configuración inicial del backend
+  useEffect(() => {
+    if (!usuarioId) return;
+    axios
+      .get(`${API_URL}/${usuarioId}`, config)
+      .then((res) => {
+        const configData = res.data;
+        setTemaOscuro(configData.temaOscuro ?? false);
+        setNotificaciones(configData.notificaciones ?? true);
+        setRole(configData.rolSeleccionado || "Admin");
+        // Si quieres traer nombre y email del perfil, haz otra petición
+      })
+      .catch((err) => {
+        console.error("Error al cargar configuración", err);
+      });
+  }, [usuarioId]);
+
+  // Función para actualizar configuración general + rol + perfil (si quieres)
+  const handleSaveConfiguracion = async (e) => {
     e.preventDefault();
+    if (!usuarioId) {
+      alert("No se encontró usuario. Por favor inicia sesión.");
+      return;
+    }
     try {
-      await axios.put(`${API_URL}/perfil`, { nombre, email }, config);
-      alert("Perfil actualizado correctamente");
-    } catch (err) {
-      alert("Error al actualizar el perfil");
+      await axios.post(
+        `${API_URL}/${usuarioId}`,
+        {
+          temaOscuro,
+          notificaciones,
+          rolSeleccionado: role,
+          // Puedes agregar nombre y email aquí si el backend soporta
+        },
+        config
+      );
+      alert("Configuración guardada correctamente");
+    } catch (error) {
+      alert("Error al guardar configuración");
+      console.error(error.response?.data || error.message);
     }
   };
 
+  // Para cambiar contraseña puedes usar otra ruta si la tienes en backend
   const handleChangePassword = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
@@ -42,39 +79,21 @@ export default function Configuracion() {
       return;
     }
     try {
-      await axios.put(`${API_URL}/password`, {
-        passwordActual: currentPassword,
-        nuevaPassword: newPassword,
-      }, config);
+      await axios.put(
+        `${API_URL}/password`, // Asumo que tienes esta ruta en backend
+        {
+          passwordActual: currentPassword,
+          nuevaPassword: newPassword,
+        },
+        config
+      );
       alert("Contraseña cambiada correctamente");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
       alert("Error al cambiar la contraseña");
-    }
-  };
-
-  const handleSaveGeneral = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.put(`${API_URL}/preferencias`, {
-        temaOscuro,
-        notificaciones,
-      }, config);
-      alert("Preferencias guardadas correctamente");
-    } catch (err) {
-      alert("Error al guardar preferencias");
-    }
-  };
-
-  const handleSaveRole = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.put(`${API_URL}/rol`, { rol: role }, config);
-      alert("Rol actualizado correctamente");
-    } catch (err) {
-      alert("Error al actualizar rol");
+      console.error(err.response?.data || err.message);
     }
   };
 
@@ -108,7 +127,11 @@ export default function Configuracion() {
       </nav>
 
       {activeTab === "perfil" && (
-        <form onSubmit={handleSavePerfil} className="space-y-4">
+        <form
+          onSubmit={handleSaveConfiguracion}
+          className="space-y-4"
+          // Aquí puedes separar la actualización de perfil si tienes ruta dedicada
+        >
           <div>
             <label className="block mb-1 font-medium">Nombre</label>
             <input
@@ -180,7 +203,7 @@ export default function Configuracion() {
       )}
 
       {activeTab === "general" && (
-        <form onSubmit={handleSaveGeneral} className="space-y-4 max-w-md">
+        <form onSubmit={handleSaveConfiguracion} className="space-y-4 max-w-md">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -215,7 +238,7 @@ export default function Configuracion() {
       )}
 
       {activeTab === "roles" && (
-        <form onSubmit={handleSaveRole} className="space-y-4 max-w-sm">
+        <form onSubmit={handleSaveConfiguracion} className="space-y-4 max-w-sm">
           <label className="block mb-1 font-medium">Seleccionar rol</label>
           <select
             value={role}
