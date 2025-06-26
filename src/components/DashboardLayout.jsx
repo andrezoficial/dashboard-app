@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
-import { FiHome, FiUsers, FiSettings, FiMenu, FiChevronLeft } from "react-icons/fi";
-import { useAuth } from "../context/AuthContext"; // ✅ Importar contexto
-import { toast } from "react-toastify"; // Asegúrate de tener esto importado
-import { FiUser, FiCalendar } from "react-icons/fi";
-
+import { FiHome, FiUsers, FiSettings, FiMenu, FiChevronLeft, FiUser, FiCalendar, FiMessageSquare } from "react-icons/fi";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate(); // para redireccionar después de logout
-  const { logout } = useAuth(); // ✅ Usar función logout del contexto
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     const handleResize = () => {
@@ -24,18 +22,18 @@ export default function DashboardLayout() {
   }, []);
 
   const handleLogout = () => {
-  logout();
-  toast.info("Sesión cerrada"); // Mostrar notificación
-  navigate("/login", { replace: true });
-};
+    logout();
+    toast.info("Sesión cerrada");
+    navigate("/login", { replace: true });
+  };
 
   const menuItems = [
     { name: "Dashboard", icon: <FiHome size={20} />, path: "/dashboard" },
     { name: "Usuarios", icon: <FiUsers size={20} />, path: "/usuarios" },
-    
     { name: "Pacientes", icon: <FiUser size={20} />, path: "/pacientes" },
     { name: "Citas", icon: <FiCalendar size={20} />, path: "/citas" },
     { name: "Configuración", icon: <FiSettings size={20} />, path: "/configuracion" },
+    { name: "Chat Bot", icon: <FiMessageSquare size={20} />, path: "/chat" },  // <-- Agregado el chat aquí
   ];
 
   const getActiveName = () => {
@@ -114,7 +112,7 @@ export default function DashboardLayout() {
             </button>
             <h2 className="text-xl font-semibold text-gray-700">{getActiveName()}</h2>
             <button
-              onClick={handleLogout} // llamar a handleLogout con navegación
+              onClick={handleLogout}
               className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               Logout
@@ -127,7 +125,7 @@ export default function DashboardLayout() {
           <header className="flex items-center justify-between bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
             <h2 className="text-2xl font-semibold text-gray-700">{getActiveName()}</h2>
             <button
-              onClick={handleLogout} // llamar a handleLogout con navegación
+              onClick={handleLogout}
               className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               Logout

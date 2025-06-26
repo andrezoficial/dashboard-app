@@ -7,6 +7,7 @@ import UsuariosPage from "./pages/UsuariosPage";
 import Pacientes from "./pages/Pacientes";
 import Citas from "./pages/Citas";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
+import ChatPage from "./pages/ChatPage"; // Importa ChatPage
 import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -67,6 +68,9 @@ export default function App() {
               </AdminRoute>
             }
           />
+
+          {/* Aquí agregamos la ruta para el ChatBot */}
+          <Route path="chat" element={<ChatPage />} />
 
           <Route path="*" element={<div className="p-6 text-red-500">Página no encontrada</div>} />
         </Route>
