@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const API_URL = "http://localhost:4000/api/pacientes"; // Ajusta si tienes otro puerto o URL
+const API_BASE_URL = "https://backend-dashboard-v2.onrender.com/api";
 
 export default function Pacientes() {
   const [pacientes, setPacientes] = useState([]);
@@ -12,70 +12,77 @@ export default function Pacientes() {
     sexo: "Masculino",
     correo: "",
     telefono: "",
-    eps: ""
+    eps: "",
   });
   const [editId, setEditId] = useState(null);
-  const [error, setError] = useState("");
 
-  // Cargar pacientes desde backend
+  // Cargar pacientes desde el backend
   useEffect(() => {
-    fetch(API_URL)
-      .then((res) => res.json())
+    fetch(`${API_BASE_URL}/pacientes`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al cargar pacientes");
+        return res.json();
+      })
       .then((data) => setPacientes(data))
-      .catch(() => setError("Error cargando pacientes"));
+      .catch((error) => alert(error.message));
   }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setError("");
 
-    try {
-      if (editId) {
-        // Actualizar paciente
-        const res = await fetch(`${API_URL}/${editId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || "Error actualizando paciente");
-        }
-        const actualizado = await res.json();
-        setPacientes(pacientes.map(p => (p._id === editId ? actualizado : p)));
-      } else {
-        // Crear paciente
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || "Error creando paciente");
-        }
-        const nuevo = await res.json();
-        setPacientes([...pacientes, nuevo]);
-      }
-
-      setFormVisible(false);
-      setFormData({
-        nombreCompleto: "",
-        tipoDocumento: "cc",
-        numeroDocumento: "",
-        sexo: "Masculino",
-        correo: "",
-        telefono: "",
-        eps: ""
-      });
-      setEditId(null);
-    } catch (err) {
-      setError(err.message);
+    if (editId) {
+      // Actualizar paciente
+      fetch(`${API_BASE_URL}/pacientes/${editId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Error al actualizar paciente");
+          return res.json();
+        })
+        .then((updatedPaciente) => {
+          setPacientes(
+            pacientes.map((p) => (p._id === editId ? updatedPaciente : p))
+          );
+          resetForm();
+        })
+        .catch((error) => alert(error.message));
+    } else {
+      // Crear nuevo paciente
+      fetch(`${API_BASE_URL}/pacientes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Error al crear paciente");
+          return res.json();
+        })
+        .then((nuevoPaciente) => {
+          setPacientes([...pacientes, nuevoPaciente]);
+          resetForm();
+        })
+        .catch((error) => alert(error.message));
     }
+  };
+
+  const resetForm = () => {
+    setFormVisible(false);
+    setFormData({
+      nombreCompleto: "",
+      tipoDocumento: "cc",
+      numeroDocumento: "",
+      sexo: "Masculino",
+      correo: "",
+      telefono: "",
+      eps: "",
+    });
+    setEditId(null);
   };
 
   const handleEdit = (paciente) => {
@@ -90,44 +97,30 @@ export default function Pacientes() {
     });
     setEditId(paciente._id);
     setFormVisible(true);
-    setError("");
   };
 
-  const handleDelete = async (id) => {
-    setError("");
-    try {
-      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-      if (res.status === 204) {
-        setPacientes(pacientes.filter(p => p._id !== id));
-      } else {
-        const data = await res.json();
-        throw new Error(data.error || "Error eliminando paciente");
-      }
-    } catch (err) {
-      setError(err.message);
-    }
+  const handleDelete = (id) => {
+    if (!window.confirm("¿Estás seguro de eliminar este paciente?")) return;
+
+    fetch(`${API_BASE_URL}/pacientes/${id}`, {
+      method: "DELETE",
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al eliminar paciente");
+        // Eliminar del estado local
+        setPacientes(pacientes.filter((p) => p._id !== id));
+      })
+      .catch((error) => alert(error.message));
   };
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Pacientes</h1>
 
-      {error && <div className="mb-4 p-2 bg-red-200 text-red-800 rounded">{error}</div>}
-
       <button
         onClick={() => {
+          resetForm();
           setFormVisible(true);
-          setEditId(null);
-          setFormData({
-            nombreCompleto: "",
-            tipoDocumento: "cc",
-            numeroDocumento: "",
-            sexo: "Masculino",
-            correo: "",
-            telefono: "",
-            eps: ""
-          });
-          setError("");
         }}
         className="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
       >
@@ -137,7 +130,7 @@ export default function Pacientes() {
       {formVisible && (
         <form onSubmit={handleSubmit} className="mb-6 p-4 border rounded bg-white">
           <div className="mb-2">
-            <label className="block mb-1 font-semibold">Nombre completo</label>
+            <label className="block mb-1 font-semibold">Nombre Completo</label>
             <input
               type="text"
               name="nombreCompleto"
@@ -149,7 +142,7 @@ export default function Pacientes() {
           </div>
 
           <div className="mb-2">
-            <label className="block mb-1 font-semibold">Tipo de documento</label>
+            <label className="block mb-1 font-semibold">Tipo de Documento</label>
             <select
               name="tipoDocumento"
               value={formData.tipoDocumento}
@@ -164,7 +157,7 @@ export default function Pacientes() {
           </div>
 
           <div className="mb-2">
-            <label className="block mb-1 font-semibold">Número de documento</label>
+            <label className="block mb-1 font-semibold">Número de Documento</label>
             <input
               type="text"
               name="numeroDocumento"
@@ -245,9 +238,9 @@ export default function Pacientes() {
       <table className="min-w-full bg-white border rounded">
         <thead>
           <tr className="bg-gray-100">
-            <th className="py-2 px-4 border-b">Nombre completo</th>
-            <th className="py-2 px-4 border-b">Tipo documento</th>
-            <th className="py-2 px-4 border-b">Número documento</th>
+            <th className="py-2 px-4 border-b">Nombre Completo</th>
+            <th className="py-2 px-4 border-b">Tipo Documento</th>
+            <th className="py-2 px-4 border-b">Número Documento</th>
             <th className="py-2 px-4 border-b">Sexo</th>
             <th className="py-2 px-4 border-b">Correo</th>
             <th className="py-2 px-4 border-b">Teléfono</th>
@@ -256,10 +249,17 @@ export default function Pacientes() {
           </tr>
         </thead>
         <tbody>
+          {pacientes.length === 0 && (
+            <tr>
+              <td colSpan="8" className="text-center py-4">
+                No hay pacientes.
+              </td>
+            </tr>
+          )}
           {pacientes.map((p) => (
             <tr key={p._id} className="hover:bg-gray-50">
               <td className="py-2 px-4 border-b">{p.nombreCompleto}</td>
-              <td className="py-2 px-4 border-b">{p.tipoDocumento}</td>
+              <td className="py-2 px-4 border-b">{p.tipoDocumento.toUpperCase()}</td>
               <td className="py-2 px-4 border-b">{p.numeroDocumento}</td>
               <td className="py-2 px-4 border-b">{p.sexo}</td>
               <td className="py-2 px-4 border-b">{p.correo}</td>
@@ -281,13 +281,6 @@ export default function Pacientes() {
               </td>
             </tr>
           ))}
-          {pacientes.length === 0 && (
-            <tr>
-              <td colSpan="8" className="text-center py-4">
-                No hay pacientes.
-              </td>
-            </tr>
-          )}
         </tbody>
       </table>
     </div>
