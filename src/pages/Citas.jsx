@@ -1,52 +1,57 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_URL = "https://citas-api-91vc.onrender.com"; // Cambia a tu URL real
+const API_URL = "https://backend-dashboard-v2.onrender.com/api";
 
 export default function Citas() {
   const [citas, setCitas] = useState([]);
+  const [pacientes, setPacientes] = useState([]);
   const [form, setForm] = useState({
     paciente: "",
     fecha: "",
-    hora: "",
-    estado: "Pendiente",
+    motivo: "",
   });
   const [editId, setEditId] = useState(null);
   const [filtro, setFiltro] = useState("");
 
-  // Cargar citas al inicio
   useEffect(() => {
     fetchCitas();
+    fetchPacientes();
   }, []);
 
   const fetchCitas = async () => {
     try {
-      const res = await axios.get(API_URL);
+      const res = await axios.get(`${API_URL}/citas`);
       setCitas(res.data);
-    } catch (error) {
+    } catch {
       alert("Error cargando citas");
     }
   };
 
-  // Manejar cambios en formulario
+  const fetchPacientes = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/pacientes`);
+      setPacientes(res.data);
+    } catch {
+      alert("Error cargando pacientes");
+    }
+  };
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Crear o actualizar cita
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (editId) {
-        // Editar
-        await axios.put(`${API_URL}/${editId}`, form);
+        await axios.put(`${API_URL}/citas/${editId}`, form);
         alert("Cita actualizada");
       } else {
-        // Crear
-        await axios.post(API_URL, form);
+        await axios.post(`${API_URL}/citas`, form);
         alert("Cita creada");
       }
-      setForm({ paciente: "", fecha: "", hora: "", estado: "Pendiente" });
+      setForm({ paciente: "", fecha: "", motivo: "" });
       setEditId(null);
       fetchCitas();
     } catch (error) {
@@ -54,35 +59,30 @@ export default function Citas() {
     }
   };
 
-  // Cargar datos para editar
   const handleEdit = (cita) => {
     setForm({
-      paciente: cita.paciente,
-      fecha: cita.fecha,
-      hora: cita.hora,
-      estado: cita.estado,
+      paciente: cita.paciente._id,
+      fecha: cita.fecha.split("T")[0],
+      motivo: cita.motivo,
     });
-    setEditId(cita.id);
+    setEditId(cita._id);
   };
 
-  // Eliminar cita
   const handleDelete = async (id) => {
     if (window.confirm("¿Eliminar esta cita?")) {
       try {
-        await axios.delete(`${API_URL}/${id}`);
+        await axios.delete(`${API_URL}/citas/${id}`);
         alert("Cita eliminada");
         fetchCitas();
-      } catch (error) {
+      } catch {
         alert("Error eliminando cita");
       }
     }
   };
 
-  // Filtrar citas por paciente o fecha
-  const citasFiltradas = citas.filter(
-    (cita) =>
-      cita.paciente.toLowerCase().includes(filtro.toLowerCase()) ||
-      cita.fecha.includes(filtro)
+  const citasFiltradas = citas.filter((cita) =>
+    cita.paciente.nombreCompleto.toLowerCase().includes(filtro.toLowerCase()) ||
+    cita.fecha.includes(filtro)
   );
 
   return (
@@ -91,7 +91,7 @@ export default function Citas() {
 
       <input
         type="text"
-        placeholder="Filtrar por paciente o fecha (YYYY-MM-DD)"
+        placeholder="Filtrar por paciente o fecha"
         value={filtro}
         onChange={(e) => setFiltro(e.target.value)}
         className="border p-2 mb-4 w-full"
@@ -100,21 +100,19 @@ export default function Citas() {
       <table className="w-full border-collapse border border-gray-300 mb-6">
         <thead>
           <tr className="bg-gray-200">
-            <th className="border border-gray-300 p-2">Paciente</th>
-            <th className="border border-gray-300 p-2">Fecha</th>
-            <th className="border border-gray-300 p-2">Hora</th>
-            <th className="border border-gray-300 p-2">Estado</th>
-            <th className="border border-gray-300 p-2">Acciones</th>
+            <th className="border p-2">Paciente</th>
+            <th className="border p-2">Fecha</th>
+            <th className="border p-2">Motivo</th>
+            <th className="border p-2">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {citasFiltradas.map((cita) => (
-            <tr key={cita.id}>
-              <td className="border border-gray-300 p-2">{cita.paciente}</td>
-              <td className="border border-gray-300 p-2">{cita.fecha}</td>
-              <td className="border border-gray-300 p-2">{cita.hora}</td>
-              <td className="border border-gray-300 p-2">{cita.estado}</td>
-              <td className="border border-gray-300 p-2 space-x-2">
+            <tr key={cita._id}>
+              <td className="border p-2">{cita.paciente?.nombreCompleto}</td>
+              <td className="border p-2">{cita.fecha.split("T")[0]}</td>
+              <td className="border p-2">{cita.motivo}</td>
+              <td className="border p-2 space-x-2">
                 <button
                   onClick={() => handleEdit(cita)}
                   className="bg-yellow-400 px-2 py-1 rounded"
@@ -122,7 +120,7 @@ export default function Citas() {
                   Editar
                 </button>
                 <button
-                  onClick={() => handleDelete(cita.id)}
+                  onClick={() => handleDelete(cita._id)}
                   className="bg-red-500 text-white px-2 py-1 rounded"
                 >
                   Cancelar
@@ -132,7 +130,7 @@ export default function Citas() {
           ))}
           {citasFiltradas.length === 0 && (
             <tr>
-              <td colSpan="5" className="text-center p-4 text-gray-500">
+              <td colSpan="4" className="text-center p-4 text-gray-500">
                 No hay citas
               </td>
             </tr>
@@ -144,15 +142,22 @@ export default function Citas() {
         <h2 className="text-xl font-semibold">
           {editId ? "Editar Cita" : "Nueva Cita"}
         </h2>
-        <input
-          type="text"
+
+        <select
           name="paciente"
-          placeholder="Paciente"
           value={form.paciente}
           onChange={handleChange}
           required
           className="border p-2 w-full"
-        />
+        >
+          <option value="">Selecciona un paciente</option>
+          {pacientes.map((p) => (
+            <option key={p._id} value={p._id}>
+              {p.nombreCompleto}
+            </option>
+          ))}
+        </select>
+
         <input
           type="date"
           name="fecha"
@@ -161,36 +166,30 @@ export default function Citas() {
           required
           className="border p-2 w-full"
         />
+
         <input
-          type="time"
-          name="hora"
-          value={form.hora}
+          type="text"
+          name="motivo"
+          placeholder="Motivo de la cita"
+          value={form.motivo}
           onChange={handleChange}
           required
           className="border p-2 w-full"
         />
-        <select
-          name="estado"
-          value={form.estado}
-          onChange={handleChange}
-          className="border p-2 w-full"
-        >
-          <option value="Pendiente">Pendiente</option>
-          <option value="Confirmada">Confirmada</option>
-          <option value="Cancelada">Cancelada</option>
-        </select>
+
         <button
           type="submit"
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           {editId ? "Actualizar" : "Crear"}
         </button>
+
         {editId && (
           <button
             type="button"
             onClick={() => {
               setEditId(null);
-              setForm({ paciente: "", fecha: "", hora: "", estado: "Pendiente" });
+              setForm({ paciente: "", fecha: "", motivo: "" });
             }}
             className="ml-2 bg-gray-400 text-white px-4 py-2 rounded"
           >
