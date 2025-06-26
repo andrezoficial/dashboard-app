@@ -1,115 +1,112 @@
 import React, { useState } from "react";
+import axios from "axios";
+
+const API_URL = "https://backend-dashboard-v2.onrender.com/api/configuracion";
+const token = localStorage.getItem("token");
 
 export default function Configuracion() {
   const [activeTab, setActiveTab] = useState("perfil");
 
-  // Estado perfil
   const [nombre, setNombre] = useState("Admin");
   const [email, setEmail] = useState("admin@admin.com");
 
-  // Estado contraseña
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Estado configuraciones generales
   const [temaOscuro, setTemaOscuro] = useState(false);
   const [notificaciones, setNotificaciones] = useState(true);
 
-  // Estado roles (ejemplo simplificado)
-  const [role, setRole] = useState("Admin"); // Puede ser Admin, Editor, Viewer
+  const [role, setRole] = useState("Admin");
 
-  // Guardar perfil
-  const handleSavePerfil = (e) => {
-    e.preventDefault();
-    alert(`Datos de perfil guardados:\nNombre: ${nombre}\nEmail: ${email}`);
-    // Aquí iría llamada a API para guardar
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   };
 
-  // Cambiar contraseña
-  const handleChangePassword = (e) => {
+  const handleSavePerfil = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${API_URL}/perfil`, { nombre, email }, config);
+      alert("Perfil actualizado correctamente");
+    } catch (err) {
+      alert("Error al actualizar el perfil");
+    }
+  };
+
+  const handleChangePassword = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
       alert("La nueva contraseña y la confirmación no coinciden.");
       return;
     }
-    alert("Contraseña cambiada correctamente");
-    // Aquí llamada API para cambiar contraseña
+    try {
+      await axios.put(`${API_URL}/password`, {
+        passwordActual: currentPassword,
+        nuevaPassword: newPassword,
+      }, config);
+      alert("Contraseña cambiada correctamente");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      alert("Error al cambiar la contraseña");
+    }
   };
 
-  // Guardar configuración general
-  const handleSaveGeneral = (e) => {
+  const handleSaveGeneral = async (e) => {
     e.preventDefault();
-    alert(`Configuración guardada:\nTema oscuro: ${temaOscuro}\nNotificaciones: ${notificaciones}`);
-    // Aquí llamada API para guardar configuración
+    try {
+      await axios.put(`${API_URL}/preferencias`, {
+        temaOscuro,
+        notificaciones,
+      }, config);
+      alert("Preferencias guardadas correctamente");
+    } catch (err) {
+      alert("Error al guardar preferencias");
+    }
   };
 
-  // Guardar rol
-  const handleSaveRole = (e) => {
+  const handleSaveRole = async (e) => {
     e.preventDefault();
-    alert(`Rol actualizado a: ${role}`);
-    // Aquí llamada API para actualizar rol
+    try {
+      await axios.put(`${API_URL}/rol`, { rol: role }, config);
+      alert("Rol actualizado correctamente");
+    } catch (err) {
+      alert("Error al actualizar rol");
+    }
   };
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow">
       <h2 className="text-2xl font-semibold mb-6">Configuración</h2>
 
-      {/* Pestañas */}
       <nav className="mb-6 border-b border-gray-200">
         <ul className="flex space-x-4">
-          <li>
-            <button
-              className={`py-2 px-4 border-b-2 ${
-                activeTab === "perfil"
-                  ? "border-blue-600 text-blue-600 font-semibold"
-                  : "border-transparent hover:text-blue-600"
-              }`}
-              onClick={() => setActiveTab("perfil")}
-            >
-              Perfil
-            </button>
-          </li>
-          <li>
-            <button
-              className={`py-2 px-4 border-b-2 ${
-                activeTab === "password"
-                  ? "border-blue-600 text-blue-600 font-semibold"
-                  : "border-transparent hover:text-blue-600"
-              }`}
-              onClick={() => setActiveTab("password")}
-            >
-              Cambiar Contraseña
-            </button>
-          </li>
-          <li>
-            <button
-              className={`py-2 px-4 border-b-2 ${
-                activeTab === "general"
-                  ? "border-blue-600 text-blue-600 font-semibold"
-                  : "border-transparent hover:text-blue-600"
-              }`}
-              onClick={() => setActiveTab("general")}
-            >
-              General
-            </button>
-          </li>
-          <li>
-            <button
-              className={`py-2 px-4 border-b-2 ${
-                activeTab === "roles"
-                  ? "border-blue-600 text-blue-600 font-semibold"
-                  : "border-transparent hover:text-blue-600"
-              }`}
-              onClick={() => setActiveTab("roles")}
-            >
-              Roles y Permisos
-            </button>
-          </li>
+          {["perfil", "password", "general", "roles"].map((tab) => (
+            <li key={tab}>
+              <button
+                className={`py-2 px-4 border-b-2 ${
+                  activeTab === tab
+                    ? "border-blue-600 text-blue-600 font-semibold"
+                    : "border-transparent hover:text-blue-600"
+                }`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab === "perfil"
+                  ? "Perfil"
+                  : tab === "password"
+                  ? "Cambiar Contraseña"
+                  : tab === "general"
+                  ? "General"
+                  : "Roles y Permisos"}
+              </button>
+            </li>
+          ))}
         </ul>
       </nav>
 
-      {/* Contenido pestañas */}
       {activeTab === "perfil" && (
         <form onSubmit={handleSavePerfil} className="space-y-4">
           <div>
@@ -122,7 +119,6 @@ export default function Configuracion() {
               required
             />
           </div>
-
           <div>
             <label className="block mb-1 font-medium">Correo electrónico</label>
             <input
@@ -133,7 +129,6 @@ export default function Configuracion() {
               required
             />
           </div>
-
           <button
             type="submit"
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -155,7 +150,6 @@ export default function Configuracion() {
               required
             />
           </div>
-
           <div>
             <label className="block mb-1 font-medium">Nueva contraseña</label>
             <input
@@ -166,7 +160,6 @@ export default function Configuracion() {
               required
             />
           </div>
-
           <div>
             <label className="block mb-1 font-medium">Confirmar nueva contraseña</label>
             <input
@@ -177,7 +170,6 @@ export default function Configuracion() {
               required
             />
           </div>
-
           <button
             type="submit"
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -201,7 +193,6 @@ export default function Configuracion() {
               Activar tema oscuro
             </label>
           </div>
-
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -214,7 +205,6 @@ export default function Configuracion() {
               Recibir notificaciones
             </label>
           </div>
-
           <button
             type="submit"
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -236,7 +226,6 @@ export default function Configuracion() {
             <option value="Editor">Editor</option>
             <option value="Viewer">Viewer</option>
           </select>
-
           <button
             type="submit"
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
