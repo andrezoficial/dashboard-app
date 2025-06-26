@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import jwtDecode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";  // Import nombrado correcto para v4+
 
 const API_URL = "https://backend-dashboard-v2.onrender.com/api/configuracion";
 
@@ -9,8 +9,8 @@ const token = localStorage.getItem("token");
 let usuarioId = null;
 if (token) {
   try {
-    const decoded = jwtDecode(token);
-    usuarioId = decoded.id || decoded._id; // revisa cuál es el correcto
+    const decoded = jwtDecode(token);  // jwtDecode, no jwt_decode
+    usuarioId = decoded.id || decoded._id; // revisa cuál es el correcto en tu payload
   } catch {
     usuarioId = null;
   }
@@ -46,7 +46,7 @@ export default function Configuracion() {
         setTemaOscuro(configData.temaOscuro ?? false);
         setNotificaciones(configData.notificaciones ?? true);
         setRole(configData.rolSeleccionado || "Admin");
-        // Si tienes nombre y email en configData, también setéalos aquí
+        // Puedes setear nombre y email aquí si vienen del backend
       })
       .catch((err) => {
         console.error("Error al cargar configuración", err);
