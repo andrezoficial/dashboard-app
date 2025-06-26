@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import jwt_decode from "jwt-decode";
+import { jwt_decode } from "jwt-decode";
 
 const API_URL = "https://backend-dashboard-v2.onrender.com/api/configuracion";
 
