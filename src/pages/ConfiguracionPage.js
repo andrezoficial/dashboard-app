@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import jwt_decode from "jwt-decode";
+import * as jwt_decode from "jwt-decode";
 
 const API_URL = "https://backend-dashboard-v2.onrender.com/api/configuracion";
 const token = localStorage.getItem("token");
-
+const decoded = jwtDecode(token);
 let usuarioId = null;
 if (token) {
   const decoded = jwt_decode(token);
