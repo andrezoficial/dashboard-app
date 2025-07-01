@@ -54,7 +54,7 @@ export default function DashboardLayout() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100">
+    <div className="flex min-h-screen overflow-hidden bg-gray-100">
       {/* Sidebar */}
       <aside
         className={`bg-white border-r border-gray-200 flex flex-col transition-width duration-300 ease-in-out fixed md:static z-30 top-0 left-0 h-full ${
@@ -110,7 +110,7 @@ export default function DashboardLayout() {
         aria-hidden="true"
       />
 
-      {/* Contenido principal con footer fijo */}
+      {/* Contenido principal con footer */}
       <div className="flex flex-col flex-1 md:ml-64 min-h-screen">
         {/* Navbar */}
         {isMobile ? (
@@ -143,11 +143,11 @@ export default function DashboardLayout() {
         )}
 
         {/* Contenido dinámico */}
-        <main className={`flex-grow overflow-auto p-6 ${isMobile ? "pt-16" : ""}`}>
+        <main className={`flex-grow overflow-auto p-6 ${isMobile ? "pt-20" : ""}`}>
           <Outlet />
         </main>
 
-        {/* Footer fijo abajo */}
+        {/* Footer */}
         <footer className="bg-white text-center py-4 border-t border-gray-200 text-sm text-gray-600">
           <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
             <span>© {currentYear} — Desarrollado por</span>
@@ -176,4 +176,3 @@ export default function DashboardLayout() {
     </div>
   );
 }
-
