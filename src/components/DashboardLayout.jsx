@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
-import { FiHome, FiUsers, FiSettings, FiMenu, FiChevronLeft, FiUser, FiCalendar, FiMessageSquare } from "react-icons/fi";
+import {
+  FiHome,
+  FiUsers,
+  FiSettings,
+  FiMenu,
+  FiChevronLeft,
+  FiUser,
+  FiCalendar,
+  FiMessageSquare,
+} from "react-icons/fi";
+import { FaGithub } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 
@@ -33,13 +43,15 @@ export default function DashboardLayout() {
     { name: "Pacientes", icon: <FiUser size={20} />, path: "/pacientes" },
     { name: "Citas", icon: <FiCalendar size={20} />, path: "/citas" },
     { name: "Configuración", icon: <FiSettings size={20} />, path: "/configuracion" },
-    { name: "Chat Bot", icon: <FiMessageSquare size={20} />, path: "/chat" },  // <-- Agregado el chat aquí
+    { name: "Chat Bot", icon: <FiMessageSquare size={20} />, path: "/chat" },
   ];
 
   const getActiveName = () => {
     const current = menuItems.find((item) => location.pathname.startsWith(item.path));
     return current ? current.name : "";
   };
+
+  const currentYear = new Date().getFullYear();
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
@@ -89,7 +101,7 @@ export default function DashboardLayout() {
         </nav>
       </aside>
 
-      {/* Overlay oscuro móvil con animación */}
+      {/* Overlay oscuro móvil */}
       <div
         className={`fixed inset-0 bg-black z-20 transition-opacity duration-300 ${
           isMobile && sidebarOpen ? "opacity-50 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -133,12 +145,29 @@ export default function DashboardLayout() {
           </header>
         )}
 
-        {/* Contenido dinámico */}
-        <main className={`flex-1 overflow-auto p-6 ${isMobile ? "pt-16" : ""}`}>
-          <Outlet />
-        </main>
+        {/* Contenido + Footer */}
+        <div className="flex flex-col min-h-screen">
+          <main className={`flex-1 overflow-auto p-6 ${isMobile ? "pt-16" : ""}`}>
+            <Outlet />
+          </main>
+          <footer className="bg-white text-center py-4 border-t border-gray-200 text-sm text-gray-600">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
+              <span>© {currentYear} — Desarrollado por</span>
+              <a
+                href="https://github.com/andrezoficial"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline flex items-center gap-1"
+              >
+                <FaGithub className="text-lg" />
+                andrezoficial
+              </a>
+            </div>
+          </footer>
+        </div>
       </div>
 
+      {/* Ocultar scrollbars personalizados */}
       <style jsx global>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
