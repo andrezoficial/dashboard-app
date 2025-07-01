@@ -9,8 +9,8 @@ const token = localStorage.getItem("token");
 let usuarioId = null;
 if (token) {
   try {
-    const decoded = jwtDecode(token);  // jwtDecode, no jwt_decode
-    usuarioId = decoded.id || decoded._id; // revisa cuál es el correcto en tu payload
+    const decoded = jwtDecode(token);
+    usuarioId = decoded.id || decoded._id;
   } catch {
     usuarioId = null;
   }
@@ -46,7 +46,6 @@ export default function Configuracion() {
         setTemaOscuro(configData.temaOscuro ?? false);
         setNotificaciones(configData.notificaciones ?? true);
         setRole(configData.rolSeleccionado || "Admin");
-        // Puedes setear nombre y email aquí si vienen del backend
       })
       .catch((err) => {
         console.error("Error al cargar configuración", err);
@@ -104,20 +103,21 @@ export default function Configuracion() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow">
-      <h2 className="text-2xl font-semibold mb-6">Configuración</h2>
+    <div className="max-w-4xl w-full mx-auto p-6 bg-white rounded shadow overflow-x-auto">
+      <h2 className="text-2xl font-semibold mb-6 break-words">Configuración</h2>
 
-      <nav className="mb-6 border-b border-gray-200">
-        <ul className="flex space-x-4">
+      <nav className="mb-6 border-b border-gray-200 overflow-x-auto">
+        <ul className="flex space-x-4 min-w-max">
           {["perfil", "password", "general", "roles"].map((tab) => (
             <li key={tab}>
               <button
-                className={`py-2 px-4 border-b-2 ${
+                className={`py-2 px-4 border-b-2 whitespace-nowrap ${
                   activeTab === tab
                     ? "border-blue-600 text-blue-600 font-semibold"
                     : "border-transparent hover:text-blue-600"
                 }`}
                 onClick={() => setActiveTab(tab)}
+                type="button"
               >
                 {tab === "perfil"
                   ? "Perfil"
@@ -133,7 +133,7 @@ export default function Configuracion() {
       </nav>
 
       {activeTab === "perfil" && (
-        <form onSubmit={handleSaveConfiguracion} className="space-y-4">
+        <form onSubmit={handleSaveConfiguracion} className="space-y-4 max-w-full">
           <div>
             <label className="block mb-1 font-medium">Nombre</label>
             <input
@@ -142,6 +142,7 @@ export default function Configuracion() {
               onChange={(e) => setNombre(e.target.value)}
               className="w-full p-2 border rounded"
               required
+              autoComplete="name"
             />
           </div>
           <div>
@@ -152,6 +153,7 @@ export default function Configuracion() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-2 border rounded"
               required
+              autoComplete="email"
             />
           </div>
           <button
@@ -164,7 +166,7 @@ export default function Configuracion() {
       )}
 
       {activeTab === "password" && (
-        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+        <form onSubmit={handleChangePassword} className="space-y-4 max-w-full max-w-md">
           <div>
             <label className="block mb-1 font-medium">Contraseña actual</label>
             <input
@@ -173,6 +175,7 @@ export default function Configuracion() {
               onChange={(e) => setCurrentPassword(e.target.value)}
               className="w-full p-2 border rounded"
               required
+              autoComplete="current-password"
             />
           </div>
           <div>
@@ -183,6 +186,7 @@ export default function Configuracion() {
               onChange={(e) => setNewPassword(e.target.value)}
               className="w-full p-2 border rounded"
               required
+              autoComplete="new-password"
             />
           </div>
           <div>
@@ -193,6 +197,7 @@ export default function Configuracion() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full p-2 border rounded"
               required
+              autoComplete="new-password"
             />
           </div>
           <button
@@ -205,7 +210,7 @@ export default function Configuracion() {
       )}
 
       {activeTab === "general" && (
-        <form onSubmit={handleSaveConfiguracion} className="space-y-4 max-w-md">
+        <form onSubmit={handleSaveConfiguracion} className="space-y-4 max-w-full max-w-md">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -240,7 +245,7 @@ export default function Configuracion() {
       )}
 
       {activeTab === "roles" && (
-        <form onSubmit={handleSaveConfiguracion} className="space-y-4 max-w-sm">
+        <form onSubmit={handleSaveConfiguracion} className="space-y-4 max-w-full max-w-sm">
           <label className="block mb-1 font-medium">Seleccionar rol</label>
           <select
             value={role}

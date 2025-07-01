@@ -112,7 +112,7 @@ export default function UsuariosPage() {
   if (error) return <p className="p-6 text-red-600">{error}</p>;
 
   return (
-    <div className="bg-white p-6 rounded shadow">
+    <div className="bg-white p-4 rounded shadow w-full max-w-full">
       <ToastContainer position="top-right" autoClose={3000} />
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Usuarios Registrados</h1>
 
@@ -166,8 +166,8 @@ export default function UsuariosPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+      <div className="w-full overflow-x-auto">
+  <table className="w-full min-w-[640px] divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600">Nombre</th>
