@@ -54,7 +54,7 @@ export default function DashboardLayout() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-gray-100">
       {/* Sidebar */}
       <aside
         className={`bg-white border-r border-gray-200 flex flex-col transition-width duration-300 ease-in-out fixed md:static z-30 top-0 left-0 h-full ${
@@ -101,7 +101,7 @@ export default function DashboardLayout() {
         </nav>
       </aside>
 
-      {/* Overlay oscuro móvil */}
+      {/* Overlay móvil */}
       <div
         className={`fixed inset-0 bg-black z-20 transition-opacity duration-300 ${
           isMobile && sidebarOpen ? "opacity-50 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -110,10 +110,10 @@ export default function DashboardLayout() {
         aria-hidden="true"
       />
 
-      {/* Contenido principal */}
-      <div className="flex flex-col flex-1 md:ml-64">
-        {/* Navbar móvil */}
-        {isMobile && (
+      {/* Contenido principal con footer fijo */}
+      <div className="flex flex-col flex-1 md:ml-64 min-h-screen">
+        {/* Navbar */}
+        {isMobile ? (
           <header className="flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 shadow-sm fixed top-0 left-0 right-0 z-30">
             <button
               className="p-2 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -130,10 +130,7 @@ export default function DashboardLayout() {
               Logout
             </button>
           </header>
-        )}
-
-        {/* Navbar desktop */}
-        {!isMobile && (
+        ) : (
           <header className="flex items-center justify-between bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
             <h2 className="text-2xl font-semibold text-gray-700">{getActiveName()}</h2>
             <button
@@ -145,30 +142,29 @@ export default function DashboardLayout() {
           </header>
         )}
 
-        {/* Contenido + Footer con sticky footer */}
-        <div className="flex flex-col min-h-screen">
-          <main className={`flex-grow overflow-auto p-6 ${isMobile ? "pt-16" : ""}`}>
-            <Outlet />
-          </main>
-          <footer className="bg-white text-center py-4 border-t border-gray-200 text-sm text-gray-600">
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
-              <span>© {currentYear} — Desarrollado por</span>
-              <a
-                href="https://github.com/andrezoficial"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline flex items-center gap-1"
-              >
-                <FaGithub className="text-lg" />
-                andrezoficial
-              </a>
-            </div>
-          </footer>
-        </div>
+        {/* Contenido dinámico */}
+        <main className={`flex-grow overflow-auto p-6 ${isMobile ? "pt-16" : ""}`}>
+          <Outlet />
+        </main>
+
+        {/* Footer fijo abajo */}
+        <footer className="bg-white text-center py-4 border-t border-gray-200 text-sm text-gray-600">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
+            <span>© {currentYear} — Desarrollado por</span>
+            <a
+              href="https://github.com/andrezoficial"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline flex items-center gap-1"
+            >
+              <FaGithub className="text-lg" />
+              andrezoficial
+            </a>
+          </div>
+        </footer>
       </div>
 
-      {/* Ocultar scrollbars personalizados */}
-      <style jsx global>{`
+      <style jsx="true" global="true">{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }
@@ -180,3 +176,4 @@ export default function DashboardLayout() {
     </div>
   );
 }
+
