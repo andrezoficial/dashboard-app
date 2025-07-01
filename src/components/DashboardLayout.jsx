@@ -143,7 +143,7 @@ export default function DashboardLayout() {
         )}
 
         {/* Contenido dinámico */}
-        <main className={`flex-grow overflow-auto p-6 ${isMobile ? "pt-20" : ""}`}>
+        <main className={`flex-grow w-full overflow-auto p-6 ${isMobile ? "pt-20" : ""}`}>
           <Outlet />
         </main>
 
