@@ -145,9 +145,9 @@ export default function DashboardLayout() {
           </header>
         )}
 
-        {/* Contenido + Footer */}
+        {/* Contenido + Footer con sticky footer */}
         <div className="flex flex-col min-h-screen">
-          <main className={`flex-1 overflow-auto p-6 ${isMobile ? "pt-16" : ""}`}>
+          <main className={`flex-grow overflow-auto p-6 ${isMobile ? "pt-16" : ""}`}>
             <Outlet />
           </main>
           <footer className="bg-white text-center py-4 border-t border-gray-200 text-sm text-gray-600">
