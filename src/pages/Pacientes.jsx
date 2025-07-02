@@ -19,7 +19,6 @@ export default function Pacientes() {
   });
   const [editId, setEditId] = useState(null);
 
-  // Cargar pacientes desde el backend
   useEffect(() => {
     fetch(`${API_BASE_URL}/pacientes`)
       .then((res) => {
@@ -54,7 +53,6 @@ export default function Pacientes() {
     e.preventDefault();
 
     if (editId) {
-      // Actualizar paciente
       fetch(`${API_BASE_URL}/pacientes/${editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -75,7 +73,6 @@ export default function Pacientes() {
           toast.error(error.message);
         });
     } else {
-      // Crear nuevo paciente
       fetch(`${API_BASE_URL}/pacientes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,7 +124,7 @@ export default function Pacientes() {
   };
 
   return (
-    <div className="w-full max-w-full p-4">
+    <div className="w-full max-w-5xl p-4 mx-auto">
       <ToastContainer position="top-right" autoClose={3000} />
       <h1 className="text-2xl font-bold mb-4">Pacientes</h1>
 
@@ -151,7 +148,7 @@ export default function Pacientes() {
             transition={{ duration: 0.3 }}
             className="mb-6 p-4 border rounded bg-white grid gap-4 sm:grid-cols-2"
           >
-            {[
+            {[ 
               { label: "Nombre Completo", name: "nombreCompleto", type: "text" },
               { label: "Número de Documento", name: "numeroDocumento", type: "text" },
               { label: "Correo", name: "correo", type: "email" },
@@ -201,17 +198,17 @@ export default function Pacientes() {
               </select>
             </div>
 
-            <div className="col-span-full flex gap-2 mt-2">
+            <div className="col-span-full flex flex-col sm:flex-row gap-2 mt-2">
               <button
                 type="submit"
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex-1"
               >
                 {editId ? "Actualizar" : "Crear"}
               </button>
               <button
                 type="button"
                 onClick={() => setFormVisible(false)}
-                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 flex-1"
               >
                 Cancelar
               </button>
@@ -257,13 +254,13 @@ export default function Pacientes() {
                   whileHover={{ backgroundColor: "#f9fafb" }}
                   className="hover:bg-gray-50"
                 >
-                  <td className="py-2 px-4 border-b">{p.nombreCompleto}</td>
-                  <td className="py-2 px-4 border-b">{p.tipoDocumento.toUpperCase()}</td>
-                  <td className="py-2 px-4 border-b">{p.numeroDocumento}</td>
-                  <td className="py-2 px-4 border-b">{p.sexo}</td>
-                  <td className="py-2 px-4 border-b">{p.correo}</td>
-                  <td className="py-2 px-4 border-b">{p.telefono}</td>
-                  <td className="py-2 px-4 border-b">{p.eps}</td>
+                  <td className="py-2 px-4 border-b break-words">{p.nombreCompleto}</td>
+                  <td className="py-2 px-4 border-b break-words">{p.tipoDocumento.toUpperCase()}</td>
+                  <td className="py-2 px-4 border-b break-words">{p.numeroDocumento}</td>
+                  <td className="py-2 px-4 border-b break-words">{p.sexo}</td>
+                  <td className="py-2 px-4 border-b break-words">{p.correo}</td>
+                  <td className="py-2 px-4 border-b break-words">{p.telefono}</td>
+                  <td className="py-2 px-4 border-b break-words">{p.eps}</td>
                   <td className="py-2 px-4 border-b whitespace-nowrap flex gap-2">
                     <button
                       onClick={() => handleEdit(p)}

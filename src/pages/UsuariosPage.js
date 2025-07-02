@@ -4,7 +4,6 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import UserForm from "../components/UserForm";
 
-// 🔗 URL base del backend (Render)
 const API_URL = "https://backend-dashboard-v2.onrender.com/api";
 
 const roles = ["Todos", "Administrador", "Editor", "Lector"];
@@ -40,9 +39,10 @@ export default function UsuariosPage() {
   }, []);
 
   const usuariosFiltrados = usuarios.filter((usuario) => {
-    const cumpleBusqueda = `${usuario.nombre} ${usuario.email} ${usuario.rol}`
-      .toLowerCase()
-      .includes(busqueda.toLowerCase());
+    const cumpleBusqueda =
+      `${usuario.nombre} ${usuario.email} ${usuario.rol}`
+        .toLowerCase()
+        .includes(busqueda.toLowerCase());
     const cumpleFiltroRol = filtroRol === "Todos" ? true : usuario.rol === filtroRol;
     return cumpleBusqueda && cumpleFiltroRol;
   });
@@ -111,14 +111,14 @@ export default function UsuariosPage() {
   if (error) return <p className="p-6 text-red-600">{error}</p>;
 
   return (
-    <div className="bg-white p-4 rounded shadow w-full max-w-full">
+    <div className="w-full max-w-screen-lg mx-auto p-4 bg-white rounded shadow">
       <ToastContainer position="top-right" autoClose={3000} />
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Usuarios Registrados</h1>
 
       {!formVisible && (
         <button
           onClick={handleNuevoUsuario}
-          className="mb-4 px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+          className="mb-4 px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 block sm:inline-block"
         >
           Nuevo Usuario
         </button>
@@ -147,11 +147,11 @@ export default function UsuariosPage() {
           disabled={formVisible}
         />
 
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap gap-2">
           {roles.map((rol) => (
             <button
               key={rol}
-              className={`px-3 py-1 rounded border transition ${
+              className={`px-3 py-1 rounded border transition whitespace-nowrap ${
                 filtroRol === rol
                   ? "bg-blue-600 text-white border-blue-600"
                   : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
@@ -165,17 +165,17 @@ export default function UsuariosPage() {
         </div>
       </div>
 
-      <div className="w-full overflow-x-auto">
-        <table className="w-full min-w-[640px] divide-y divide-gray-200 text-sm">
+      <div className="overflow-x-auto rounded border bg-white">
+        <table className="w-full min-w-[600px] divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600">Nombre</th>
-              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600">Correo</th>
-              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600">Rol</th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-600">Nombre</th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-600">Correo</th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-600">Rol</th>
               <th className="px-4 py-2"></th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 bg-white">
             {usuariosVisibles.length === 0 ? (
               <tr>
                 <td colSpan="4" className="text-center text-gray-500 py-4">
@@ -185,26 +185,20 @@ export default function UsuariosPage() {
             ) : (
               usuariosVisibles.map((usuario) => (
                 <tr key={usuario._id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 text-sm text-gray-800">{usuario.nombre}</td>
-                  <td className="px-4 py-2 text-sm text-gray-600">{usuario.email}</td>
-                  <td className="px-4 py-2 text-sm text-gray-600">{usuario.rol}</td>
-                  <td className="px-4 py-2 text-sm text-right space-x-2 whitespace-nowrap">
+                  <td className="px-4 py-2">{usuario.nombre}</td>
+                  <td className="px-4 py-2 text-gray-600">{usuario.email}</td>
+                  <td className="px-4 py-2 text-gray-600">{usuario.rol}</td>
+                  <td className="px-4 py-2 text-right space-x-2 whitespace-nowrap">
                     <button
                       onClick={() => handleEditarUsuario(usuario)}
-                      className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm"
+                      className="text-blue-600 hover:underline"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-5M18.5 2.5l3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
                       Editar
                     </button>
                     <button
                       onClick={() => handleEliminar(usuario._id)}
-                      className="inline-flex items-center gap-1 text-red-600 hover:underline text-sm"
+                      className="text-red-600 hover:underline"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-2-3h-2a1 1 0 00-1 1v1h4V5a1 1 0 00-1-1z" />
-                      </svg>
                       Eliminar
                     </button>
                   </td>
@@ -215,7 +209,7 @@ export default function UsuariosPage() {
         </table>
       </div>
 
-      <div className="flex justify-between items-center mt-4">
+      <div className="flex justify-between items-center mt-4 flex-wrap gap-2">
         <button
           disabled={currentPage === 1 || formVisible}
           onClick={() => setCurrentPage(currentPage - 1)}

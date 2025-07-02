@@ -105,7 +105,7 @@ export default function Configuracion() {
       </nav>
 
       {activeTab === "perfil" && (
-        <form onSubmit={handleSaveConfiguracion} className="space-y-4">
+        <form onSubmit={handleSaveConfiguracion} className="space-y-4 max-w-full sm:max-w-md">
           <div>
             <label className="block mb-1 font-medium">Nombre</label>
             <input
@@ -133,7 +133,7 @@ export default function Configuracion() {
       )}
 
       {activeTab === "password" && (
-        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+        <form onSubmit={handleChangePassword} className="space-y-4 max-w-full sm:max-w-md">
           <div>
             <label className="block mb-1 font-medium">Actual</label>
             <input
@@ -171,7 +171,7 @@ export default function Configuracion() {
       )}
 
       {activeTab === "general" && (
-        <form onSubmit={handleSaveConfiguracion} className="space-y-4 max-w-md">
+        <form onSubmit={handleSaveConfiguracion} className="space-y-4 max-w-full sm:max-w-md">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -180,7 +180,7 @@ export default function Configuracion() {
               onChange={() => setTemaOscuro(!temaOscuro)}
               className="w-5 h-5"
             />
-            <label htmlFor="temaOscuro" className="font-medium">
+            <label htmlFor="temaOscuro" className="font-medium select-none">
               Tema oscuro
             </label>
           </div>
@@ -192,7 +192,7 @@ export default function Configuracion() {
               onChange={() => setNotificaciones(!notificaciones)}
               className="w-5 h-5"
             />
-            <label htmlFor="notificaciones" className="font-medium">
+            <label htmlFor="notificaciones" className="font-medium select-none">
               Recibir notificaciones
             </label>
           </div>
@@ -203,7 +203,7 @@ export default function Configuracion() {
       )}
 
       {activeTab === "roles" && (
-        <form onSubmit={handleSaveConfiguracion} className="space-y-4 max-w-sm">
+        <form onSubmit={handleSaveConfiguracion} className="space-y-4 max-w-full sm:max-w-xs">
           <label className="block mb-1 font-medium">Rol</label>
           <select
             value={role}
