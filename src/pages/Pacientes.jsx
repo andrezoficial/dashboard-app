@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const API_BASE_URL = "https://backend-dashboard-v2.onrender.com/api";
 
@@ -24,11 +27,27 @@ export default function Pacientes() {
         return res.json();
       })
       .then((data) => setPacientes(data))
-      .catch((error) => alert(error.message));
+      .catch((error) => {
+        toast.error(error.message);
+      });
   }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const resetForm = () => {
+    setFormVisible(false);
+    setFormData({
+      nombreCompleto: "",
+      tipoDocumento: "cc",
+      numeroDocumento: "",
+      sexo: "Masculino",
+      correo: "",
+      telefono: "",
+      eps: "",
+    });
+    setEditId(null);
   };
 
   const handleSubmit = (e) => {
@@ -49,9 +68,12 @@ export default function Pacientes() {
           setPacientes(
             pacientes.map((p) => (p._id === editId ? updatedPaciente : p))
           );
+          toast.success("Paciente actualizado correctamente");
           resetForm();
         })
-        .catch((error) => alert(error.message));
+        .catch((error) => {
+          toast.error(error.message);
+        });
     } else {
       // Crear nuevo paciente
       fetch(`${API_BASE_URL}/pacientes`, {
@@ -65,24 +87,13 @@ export default function Pacientes() {
         })
         .then((nuevoPaciente) => {
           setPacientes([...pacientes, nuevoPaciente]);
+          toast.success("Paciente creado exitosamente");
           resetForm();
         })
-        .catch((error) => alert(error.message));
+        .catch((error) => {
+          toast.error(error.message);
+        });
     }
-  };
-
-  const resetForm = () => {
-    setFormVisible(false);
-    setFormData({
-      nombreCompleto: "",
-      tipoDocumento: "cc",
-      numeroDocumento: "",
-      sexo: "Masculino",
-      correo: "",
-      telefono: "",
-      eps: "",
-    });
-    setEditId(null);
   };
 
   const handleEdit = (paciente) => {
@@ -107,14 +118,17 @@ export default function Pacientes() {
     })
       .then((res) => {
         if (!res.ok) throw new Error("Error al eliminar paciente");
-        // Eliminar del estado local
         setPacientes(pacientes.filter((p) => p._id !== id));
+        toast.success("Paciente eliminado correctamente");
       })
-      .catch((error) => alert(error.message));
+      .catch((error) => {
+        toast.error(error.message);
+      });
   };
 
   return (
-    <div>
+    <div className="w-full max-w-full p-4">
+      <ToastContainer position="top-right" autoClose={3000} />
       <h1 className="text-2xl font-bold mb-4">Pacientes</h1>
 
       <button
@@ -127,162 +141,149 @@ export default function Pacientes() {
         Agregar paciente
       </button>
 
-      {formVisible && (
-        <form onSubmit={handleSubmit} className="mb-6 p-4 border rounded bg-white">
-          <div className="mb-2">
-            <label className="block mb-1 font-semibold">Nombre Completo</label>
-            <input
-              type="text"
-              name="nombreCompleto"
-              value={formData.nombreCompleto}
-              onChange={handleChange}
-              required
-              className="w-full border px-3 py-2 rounded"
-            />
-          </div>
-
-          <div className="mb-2">
-            <label className="block mb-1 font-semibold">Tipo de Documento</label>
-            <select
-              name="tipoDocumento"
-              value={formData.tipoDocumento}
-              onChange={handleChange}
-              required
-              className="w-full border px-3 py-2 rounded"
-            >
-              <option value="cc">CC</option>
-              <option value="ti">TI</option>
-              <option value="ce">CE</option>
-            </select>
-          </div>
-
-          <div className="mb-2">
-            <label className="block mb-1 font-semibold">Número de Documento</label>
-            <input
-              type="text"
-              name="numeroDocumento"
-              value={formData.numeroDocumento}
-              onChange={handleChange}
-              required
-              className="w-full border px-3 py-2 rounded"
-            />
-          </div>
-
-          <div className="mb-2">
-            <label className="block mb-1 font-semibold">Sexo</label>
-            <select
-              name="sexo"
-              value={formData.sexo}
-              onChange={handleChange}
-              required
-              className="w-full border px-3 py-2 rounded"
-            >
-              <option value="Masculino">Masculino</option>
-              <option value="Femenino">Femenino</option>
-              <option value="Otro">Otro</option>
-            </select>
-          </div>
-
-          <div className="mb-2">
-            <label className="block mb-1 font-semibold">Correo</label>
-            <input
-              type="email"
-              name="correo"
-              value={formData.correo}
-              onChange={handleChange}
-              required
-              className="w-full border px-3 py-2 rounded"
-            />
-          </div>
-
-          <div className="mb-2">
-            <label className="block mb-1 font-semibold">Teléfono</label>
-            <input
-              type="text"
-              name="telefono"
-              value={formData.telefono}
-              onChange={handleChange}
-              required
-              className="w-full border px-3 py-2 rounded"
-            />
-          </div>
-
-          <div className="mb-2">
-            <label className="block mb-1 font-semibold">EPS</label>
-            <input
-              type="text"
-              name="eps"
-              value={formData.eps}
-              onChange={handleChange}
-              required
-              className="w-full border px-3 py-2 rounded"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+      <AnimatePresence>
+        {formVisible && (
+          <motion.form
+            onSubmit={handleSubmit}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="mb-6 p-4 border rounded bg-white grid gap-4 sm:grid-cols-2"
           >
-            {editId ? "Actualizar" : "Crear"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setFormVisible(false)}
-            className="ml-2 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-          >
-            Cancelar
-          </button>
-        </form>
-      )}
+            {[
+              { label: "Nombre Completo", name: "nombreCompleto", type: "text" },
+              { label: "Número de Documento", name: "numeroDocumento", type: "text" },
+              { label: "Correo", name: "correo", type: "email" },
+              { label: "Teléfono", name: "telefono", type: "text" },
+              { label: "EPS", name: "eps", type: "text" },
+            ].map(({ label, name, type }) => (
+              <div key={name}>
+                <label className="block font-semibold mb-1">{label}</label>
+                <input
+                  type={type}
+                  name={name}
+                  value={formData[name]}
+                  onChange={handleChange}
+                  required
+                  className="w-full border px-3 py-2 rounded"
+                />
+              </div>
+            ))}
 
-      <table className="min-w-full bg-white border rounded">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="py-2 px-4 border-b">Nombre Completo</th>
-            <th className="py-2 px-4 border-b">Tipo Documento</th>
-            <th className="py-2 px-4 border-b">Número Documento</th>
-            <th className="py-2 px-4 border-b">Sexo</th>
-            <th className="py-2 px-4 border-b">Correo</th>
-            <th className="py-2 px-4 border-b">Teléfono</th>
-            <th className="py-2 px-4 border-b">EPS</th>
-            <th className="py-2 px-4 border-b">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pacientes.length === 0 && (
+            <div>
+              <label className="block font-semibold mb-1">Tipo de Documento</label>
+              <select
+                name="tipoDocumento"
+                value={formData.tipoDocumento}
+                onChange={handleChange}
+                required
+                className="w-full border px-3 py-2 rounded"
+              >
+                <option value="cc">CC</option>
+                <option value="ti">TI</option>
+                <option value="ce">CE</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-semibold mb-1">Sexo</label>
+              <select
+                name="sexo"
+                value={formData.sexo}
+                onChange={handleChange}
+                required
+                className="w-full border px-3 py-2 rounded"
+              >
+                <option value="Masculino">Masculino</option>
+                <option value="Femenino">Femenino</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+
+            <div className="col-span-full flex gap-2 mt-2">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                {editId ? "Actualizar" : "Crear"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormVisible(false)}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+              >
+                Cancelar
+              </button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
+
+      <div className="overflow-x-auto rounded border bg-white">
+        <table className="min-w-[720px] w-full text-sm">
+          <thead className="bg-gray-100 text-left">
             <tr>
-              <td colSpan="8" className="text-center py-4">
-                No hay pacientes.
-              </td>
+              {[
+                "Nombre Completo",
+                "Tipo Documento",
+                "Número Documento",
+                "Sexo",
+                "Correo",
+                "Teléfono",
+                "EPS",
+                "Acciones",
+              ].map((title) => (
+                <th key={title} className="py-2 px-4 border-b font-medium">
+                  {title}
+                </th>
+              ))}
             </tr>
-          )}
-          {pacientes.map((p) => (
-            <tr key={p._id} className="hover:bg-gray-50">
-              <td className="py-2 px-4 border-b">{p.nombreCompleto}</td>
-              <td className="py-2 px-4 border-b">{p.tipoDocumento.toUpperCase()}</td>
-              <td className="py-2 px-4 border-b">{p.numeroDocumento}</td>
-              <td className="py-2 px-4 border-b">{p.sexo}</td>
-              <td className="py-2 px-4 border-b">{p.correo}</td>
-              <td className="py-2 px-4 border-b">{p.telefono}</td>
-              <td className="py-2 px-4 border-b">{p.eps}</td>
-              <td className="py-2 px-4 border-b">
-                <button
-                  onClick={() => handleEdit(p)}
-                  className="mr-2 text-blue-600 hover:underline"
+          </thead>
+          <tbody>
+            {pacientes.length === 0 ? (
+              <tr>
+                <td colSpan="8" className="text-center py-4">
+                  No hay pacientes.
+                </td>
+              </tr>
+            ) : (
+              pacientes.map((p) => (
+                <motion.tr
+                  key={p._id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  whileHover={{ backgroundColor: "#f9fafb" }}
+                  className="hover:bg-gray-50"
                 >
-                  Editar
-                </button>
-                <button
-                  onClick={() => handleDelete(p._id)}
-                  className="text-red-600 hover:underline"
-                >
-                  Eliminar
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  <td className="py-2 px-4 border-b">{p.nombreCompleto}</td>
+                  <td className="py-2 px-4 border-b">{p.tipoDocumento.toUpperCase()}</td>
+                  <td className="py-2 px-4 border-b">{p.numeroDocumento}</td>
+                  <td className="py-2 px-4 border-b">{p.sexo}</td>
+                  <td className="py-2 px-4 border-b">{p.correo}</td>
+                  <td className="py-2 px-4 border-b">{p.telefono}</td>
+                  <td className="py-2 px-4 border-b">{p.eps}</td>
+                  <td className="py-2 px-4 border-b whitespace-nowrap flex gap-2">
+                    <button
+                      onClick={() => handleEdit(p)}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleDelete(p._id)}
+                      className="text-red-600 hover:underline"
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </motion.tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

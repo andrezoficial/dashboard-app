@@ -40,10 +40,9 @@ export default function UsuariosPage() {
   }, []);
 
   const usuariosFiltrados = usuarios.filter((usuario) => {
-    const cumpleBusqueda =
-      `${usuario.nombre} ${usuario.email} ${usuario.rol}`
-        .toLowerCase()
-        .includes(busqueda.toLowerCase());
+    const cumpleBusqueda = `${usuario.nombre} ${usuario.email} ${usuario.rol}`
+      .toLowerCase()
+      .includes(busqueda.toLowerCase());
     const cumpleFiltroRol = filtroRol === "Todos" ? true : usuario.rol === filtroRol;
     return cumpleBusqueda && cumpleFiltroRol;
   });
@@ -148,7 +147,7 @@ export default function UsuariosPage() {
           disabled={formVisible}
         />
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {roles.map((rol) => (
             <button
               key={rol}
@@ -167,7 +166,7 @@ export default function UsuariosPage() {
       </div>
 
       <div className="w-full overflow-x-auto">
-  <table className="w-full min-w-[640px] divide-y divide-gray-200 text-sm">
+        <table className="w-full min-w-[640px] divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600">Nombre</th>
@@ -189,17 +188,23 @@ export default function UsuariosPage() {
                   <td className="px-4 py-2 text-sm text-gray-800">{usuario.nombre}</td>
                   <td className="px-4 py-2 text-sm text-gray-600">{usuario.email}</td>
                   <td className="px-4 py-2 text-sm text-gray-600">{usuario.rol}</td>
-                  <td className="px-4 py-2 text-sm text-right space-x-2">
+                  <td className="px-4 py-2 text-sm text-right space-x-2 whitespace-nowrap">
                     <button
                       onClick={() => handleEditarUsuario(usuario)}
-                      className="text-blue-600 hover:underline text-sm"
+                      className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm"
                     >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-5M18.5 2.5l3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
                       Editar
                     </button>
                     <button
                       onClick={() => handleEliminar(usuario._id)}
-                      className="text-red-600 hover:underline text-sm"
+                      className="inline-flex items-center gap-1 text-red-600 hover:underline text-sm"
                     >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-2-3h-2a1 1 0 00-1 1v1h4V5a1 1 0 00-1-1z" />
+                      </svg>
                       Eliminar
                     </button>
                   </td>
