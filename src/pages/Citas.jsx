@@ -81,10 +81,12 @@ export default function Citas() {
   };
 
   const citasFiltradas = citas.filter((cita) => {
-    const pacienteNombre = cita.paciente?.nombreCompleto || "";
+    const pacienteNombre = cita.paciente && cita.paciente.nombreCompleto ? cita.paciente.nombreCompleto : "";
+    const fecha = cita.fecha ? cita.fecha : "";
+
     return (
       pacienteNombre.toLowerCase().includes(filtro.toLowerCase()) ||
-      (cita.fecha ? cita.fecha.includes(filtro) : false)
+      fecha.includes(filtro)
     );
   });
 
@@ -117,31 +119,31 @@ export default function Citas() {
               </td>
             </tr>
           )}
-          {citasFiltradas.map((cita) => {
-            const pacienteNombre = cita.paciente?.nombreCompleto || "Paciente no asignado";
-
-            return (
-              <tr key={cita._id}>
-                <td className="border p-2">{pacienteNombre}</td>
-                <td className="border p-2">{cita.fecha ? cita.fecha.split("T")[0] : ""}</td>
-                <td className="border p-2">{cita.motivo}</td>
-                <td className="border p-2 space-x-2">
-                  <button
-                    onClick={() => handleEdit(cita)}
-                    className="bg-yellow-400 px-2 py-1 rounded"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => handleDelete(cita._id)}
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                  >
-                    Cancelar
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
+          {citasFiltradas.map((cita) => (
+            <tr key={cita._id}>
+              <td className="border p-2">
+                {cita.paciente && cita.paciente.nombreCompleto
+                  ? cita.paciente.nombreCompleto
+                  : "Paciente no asignado"}
+              </td>
+              <td className="border p-2">{cita.fecha ? cita.fecha.split("T")[0] : ""}</td>
+              <td className="border p-2">{cita.motivo}</td>
+              <td className="border p-2 space-x-2">
+                <button
+                  onClick={() => handleEdit(cita)}
+                  className="bg-yellow-400 px-2 py-1 rounded"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => handleDelete(cita._id)}
+                  className="bg-red-500 text-white px-2 py-1 rounded"
+                >
+                  Cancelar
+                </button>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
 
