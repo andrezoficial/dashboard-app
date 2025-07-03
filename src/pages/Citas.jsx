@@ -60,8 +60,16 @@ export default function Citas() {
   };
 
   const handleEdit = (cita) => {
+    let pacienteId = "";
+    if (cita.paciente) {
+      if (typeof cita.paciente === "object") {
+        pacienteId = cita.paciente._id || "";
+      } else if (typeof cita.paciente === "string") {
+        pacienteId = cita.paciente;
+      }
+    }
     setForm({
-      paciente: cita.paciente?._id || cita.paciente || "",
+      paciente: pacienteId,
       fecha: cita.fecha ? cita.fecha.split("T")[0] : "",
       motivo: cita.motivo || "",
     });
@@ -80,14 +88,16 @@ export default function Citas() {
     }
   };
 
- const citasFiltradas = citas.filter((cita) => {
-  const nombrePaciente = cita.paciente?.nombreCompleto || "";
-  const fecha = cita.fecha || "";
-  return (
-    nombrePaciente.toLowerCase().includes(filtro.toLowerCase()) ||
-    fecha.includes(filtro)
-  );
-});
+  const citasFiltradas = citas.filter((cita) => {
+    const nombrePaciente =
+      (cita.paciente && typeof cita.paciente === "object" && cita.paciente.nombreCompleto) ||
+      "";
+    const fecha = cita.fecha ? cita.fecha.toString() : "";
+    return (
+      nombrePaciente.toLowerCase().includes(filtro.toLowerCase()) ||
+      fecha.includes(filtro)
+    );
+  });
 
   return (
     <div className="max-w-4xl mx-auto p-4">
@@ -121,7 +131,8 @@ export default function Citas() {
           {citasFiltradas.map((cita) => (
             <tr key={cita._id}>
               <td className="border p-2">
-                {cita.paciente?.nombreCompleto || "Paciente no asignado"}
+                {(cita.paciente && typeof cita.paciente === "object" && cita.paciente.nombreCompleto) ||
+                 "Paciente no asignado"}
               </td>
               <td className="border p-2">{cita.fecha ? cita.fecha.split("T")[0] : ""}</td>
               <td className="border p-2">{cita.motivo}</td>
