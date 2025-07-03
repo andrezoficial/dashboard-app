@@ -14,7 +14,7 @@ import {
 } from "react-icons/fi";
 import { FaGithub } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext"; // Contexto tema
+import { useTheme } from "../context/ThemeContext"; // <-- Importa el contexto tema
 import { toast } from "react-toastify";
 
 export default function DashboardLayout() {
@@ -70,14 +70,30 @@ export default function DashboardLayout() {
         } ${isMobile ? (sidebarOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}`}
         style={{ transitionProperty: "width, transform" }}
       >
+        {/* Header sidebar con botón tema a la izquierda del logo */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-          <h1
-            className={`text-xl font-bold text-blue-600 dark:text-blue-400 ${
-              sidebarOpen ? "block" : "hidden"
-            }`}
-          >
-            Admin
-          </h1>
+          {/* Contenedor botón tema + logo */}
+          <div className="flex items-center gap-2">
+            {/* Botón toggle tema */}
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle Theme"
+              className="p-2 rounded bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition"
+            >
+              {darkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
+            </button>
+
+            {/* Logo (oculto si sidebar cerrado) */}
+            <h1
+              className={`text-xl font-bold text-blue-600 dark:text-blue-400 ${
+                sidebarOpen ? "block" : "hidden"
+              }`}
+            >
+              Admin
+            </h1>
+          </div>
+
+          {/* Botón cerrar sidebar (solo móvil) */}
           <button
             className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 md:hidden"
             onClick={() => setSidebarOpen(false)}
@@ -161,13 +177,10 @@ export default function DashboardLayout() {
           </header>
         ) : (
           <header className="flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 shadow-sm">
-            {/* Logo + Título */}
-            <div className="flex items-center gap-4">
-              <img src="/logo.png" alt="Logo" className="h-8" />
-              <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300">
-                {getActiveName()}
-              </h2>
-            </div>
+            {/* Título izquierda */}
+            <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300">
+              {getActiveName()}
+            </h2>
 
             {/* Botones Logout y Tema */}
             <div className="flex items-center gap-2 z-10">

@@ -103,13 +103,17 @@ export default function UsuariosPage() {
     setUsuarioEditando(null);
   };
 
-  if (loading) return <p className="p-6">Cargando usuarios...</p>;
-  if (error) return <p className="p-6 text-red-600">{error}</p>;
+  if (loading)
+    return <p className="p-6 text-gray-700 dark:text-gray-300">Cargando usuarios...</p>;
+  if (error)
+    return <p className="p-6 text-red-600 dark:text-red-400">{error}</p>;
 
   return (
-    <div className="w-full max-w-screen-lg mx-auto p-4 bg-white rounded shadow">
+    <div className="w-full max-w-screen-lg mx-auto p-4 bg-white dark:bg-gray-800 rounded shadow">
       <ToastContainer position="top-right" autoClose={3000} />
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">Usuarios Registrados</h1>
+      <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+        Usuarios Registrados
+      </h1>
 
       {!formVisible && (
         <button
@@ -121,7 +125,7 @@ export default function UsuariosPage() {
       )}
 
       {formVisible && (
-        <div className="mb-6 border border-gray-300 rounded p-4 bg-gray-50">
+        <div className="mb-6 border border-gray-300 dark:border-gray-600 rounded p-4 bg-gray-50 dark:bg-gray-700">
           <UserForm
             usuarioEditando={usuarioEditando}
             onSubmit={handleGuardarUsuario}
@@ -134,7 +138,7 @@ export default function UsuariosPage() {
         <input
           type="text"
           placeholder="Buscar por nombre, correo o rol..."
-          className="flex-grow px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-grow px-4 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-100"
           value={busqueda}
           onChange={(e) => {
             setBusqueda(e.target.value);
@@ -150,7 +154,7 @@ export default function UsuariosPage() {
               className={`px-3 py-1 rounded border transition whitespace-nowrap ${
                 filtroRol === rol
                   ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600"
               }`}
               onClick={() => handleFiltroRol(rol)}
               disabled={formVisible}
@@ -164,34 +168,34 @@ export default function UsuariosPage() {
       {/* Tarjetas para móviles */}
       <div className="grid gap-4 sm:hidden">
         {usuariosVisibles.length === 0 ? (
-          <p className="text-center text-gray-500 py-4">
+          <p className="text-center text-gray-500 dark:text-gray-400 py-4">
             No se encontraron resultados.
           </p>
         ) : (
           usuariosVisibles.map((usuario) => (
             <div
               key={usuario._id}
-              className="bg-white border rounded p-4 shadow flex flex-col gap-1"
+              className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded p-4 shadow flex flex-col gap-1"
             >
-              <h2 className="text-lg font-semibold text-blue-700">
+              <h2 className="text-lg font-semibold text-blue-700 dark:text-blue-400">
                 {usuario.nombre}
               </h2>
-              <p>
+              <p className="text-gray-700 dark:text-gray-300">
                 <strong>Correo:</strong> {usuario.email}
               </p>
-              <p>
+              <p className="text-gray-700 dark:text-gray-300">
                 <strong>Rol:</strong> {usuario.rol}
               </p>
               <div className="flex gap-4 mt-2">
                 <button
                   onClick={() => handleEditarUsuario(usuario)}
-                  className="text-blue-600 hover:underline"
+                  className="text-blue-600 dark:text-blue-400 hover:underline"
                 >
                   Editar
                 </button>
                 <button
                   onClick={() => handleEliminar(usuario._id)}
-                  className="text-red-600 hover:underline"
+                  className="text-red-600 dark:text-red-400 hover:underline"
                 >
                   Eliminar
                 </button>
@@ -202,39 +206,54 @@ export default function UsuariosPage() {
       </div>
 
       {/* Tabla para escritorio */}
-      <div className="hidden sm:block overflow-x-auto rounded border bg-white">
-        <table className="w-full min-w-[600px] divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
+      <div className="hidden sm:block overflow-x-auto rounded border bg-white dark:bg-gray-700">
+        <table className="w-full min-w-[600px] divide-y divide-gray-200 dark:divide-gray-600 text-sm">
+          <thead className="bg-gray-50 dark:bg-gray-600">
             <tr>
-              <th className="px-4 py-2 text-left font-semibold text-gray-600">Nombre</th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-600">Correo</th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-600">Rol</th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-600 dark:text-gray-200">
+                Nombre
+              </th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-600 dark:text-gray-200">
+                Correo
+              </th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-600 dark:text-gray-200">
+                Rol
+              </th>
               <th className="px-4 py-2"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-600 bg-white dark:bg-gray-700">
             {usuariosVisibles.length === 0 ? (
               <tr>
-                <td colSpan="4" className="text-center text-gray-500 py-4">
+                <td colSpan="4" className="text-center text-gray-500 dark:text-gray-400 py-4">
                   No se encontraron resultados.
                 </td>
               </tr>
             ) : (
               usuariosVisibles.map((usuario) => (
-                <tr key={usuario._id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2">{usuario.nombre}</td>
-                  <td className="px-4 py-2 text-gray-600">{usuario.email}</td>
-                  <td className="px-4 py-2 text-gray-600">{usuario.rol}</td>
+                <tr
+                  key={usuario._id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-600"
+                >
+                  <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
+                    {usuario.nombre}
+                  </td>
+                  <td className="px-4 py-2 text-gray-600 dark:text-gray-300">
+                    {usuario.email}
+                  </td>
+                  <td className="px-4 py-2 text-gray-600 dark:text-gray-300">
+                    {usuario.rol}
+                  </td>
                   <td className="px-4 py-2 text-right space-x-2 whitespace-nowrap">
                     <button
                       onClick={() => handleEditarUsuario(usuario)}
-                      className="text-blue-600 hover:underline"
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       Editar
                     </button>
                     <button
                       onClick={() => handleEliminar(usuario._id)}
-                      className="text-red-600 hover:underline"
+                      className="text-red-600 dark:text-red-400 hover:underline"
                     >
                       Eliminar
                     </button>
@@ -250,17 +269,17 @@ export default function UsuariosPage() {
         <button
           disabled={currentPage === 1 || formVisible}
           onClick={() => setCurrentPage(currentPage - 1)}
-          className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+          className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-50"
         >
           Anterior
         </button>
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-gray-600 dark:text-gray-300">
           Página {currentPage} de {totalPages || 1}
         </span>
         <button
           disabled={currentPage === totalPages || totalPages === 0 || formVisible}
           onClick={() => setCurrentPage(currentPage + 1)}
-          className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+          className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-50"
         >
           Siguiente
         </button>
