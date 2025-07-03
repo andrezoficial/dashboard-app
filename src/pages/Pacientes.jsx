@@ -124,8 +124,7 @@ export default function Pacientes() {
   };
 
   return (
-    <div className="w-full max-w-5xl p-4 mx-auto px-2 sm:px-4">
-      {/* Toast notifications */}
+    <div className="w-full max-w-5xl mx-auto p-4 px-2 sm:px-4">
       <ToastContainer position="top-right" autoClose={3000} />
 
       <h1 className="text-xl sm:text-2xl font-bold mb-4">Pacientes</h1>
@@ -148,7 +147,7 @@ export default function Pacientes() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="mb-6 p-4 border rounded bg-white grid gap-4 sm:grid-cols-2"
+            className="mb-6 p-4 border rounded bg-white grid gap-4 grid-cols-1 sm:grid-cols-2"
           >
             {[
               { label: "Nombre Completo", name: "nombreCompleto", type: "text" },
@@ -223,12 +222,11 @@ export default function Pacientes() {
         )}
       </AnimatePresence>
 
-      {/* Tabla con scroll horizontal para móviles y texto que envuelve */}
       <div
         className="overflow-x-auto rounded border bg-white"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
-        <table className="min-w-[720px] w-full text-sm">
+        <table className="min-w-[720px] w-full text-sm table-fixed">
           <thead className="bg-gray-100 text-left">
             <tr>
               {[
