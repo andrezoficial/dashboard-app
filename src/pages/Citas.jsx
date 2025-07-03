@@ -80,14 +80,14 @@ export default function Citas() {
     }
   };
 
-  const citasFiltradas = citas.filter((cita) => {
-    const nombrePaciente = cita.paciente?.nombreCompleto || "";
-    const fecha = cita.fecha || "";
-    return (
-      nombrePaciente.toLowerCase().includes(filtro.toLowerCase()) ||
-      fecha.includes(filtro)
-    );
-  });
+ const citasFiltradas = citas.filter((cita) => {
+  const nombrePaciente = cita.paciente?.nombreCompleto || "";
+  const fecha = cita.fecha || "";
+  return (
+    nombrePaciente.toLowerCase().includes(filtro.toLowerCase()) ||
+    fecha.includes(filtro)
+  );
+});
 
   return (
     <div className="max-w-4xl mx-auto p-4">
