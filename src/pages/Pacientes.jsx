@@ -73,9 +73,7 @@ export default function Pacientes() {
       })
       .then((paciente) => {
         if (editId) {
-          setPacientes(
-            pacientes.map((p) => (p._id === editId ? paciente : p))
-          );
+          setPacientes(pacientes.map((p) => (p._id === editId ? paciente : p)));
           toast.success("Paciente actualizado correctamente");
         } else {
           setPacientes([...pacientes, paciente]);
@@ -109,7 +107,7 @@ export default function Pacientes() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4">
+    <div className="w-full max-w-6xl mx-auto p-4 text-gray-900 dark:text-gray-100">
       <ToastContainer position="top-right" autoClose={3000} />
 
       <h1 className="text-xl sm:text-2xl font-bold mb-4">Pacientes</h1>
@@ -132,7 +130,7 @@ export default function Pacientes() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="mb-6 p-4 border rounded bg-white grid gap-4 grid-cols-1 sm:grid-cols-2"
+            className="mb-6 p-4 border rounded bg-white dark:bg-gray-800 dark:border-gray-700 grid gap-4 grid-cols-1 sm:grid-cols-2"
           >
             {[
               { label: "Nombre Completo", name: "nombreCompleto", type: "text" },
@@ -149,7 +147,7 @@ export default function Pacientes() {
                   value={formData[name]}
                   onChange={handleChange}
                   required
-                  className="w-full border px-3 py-2 rounded"
+                  className="w-full border px-3 py-2 rounded bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                 />
               </div>
             ))}
@@ -161,7 +159,7 @@ export default function Pacientes() {
                 value={formData.tipoDocumento}
                 onChange={handleChange}
                 required
-                className="w-full border px-3 py-2 rounded"
+                className="w-full border px-3 py-2 rounded bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
               >
                 <option value="cc">CC</option>
                 <option value="ti">TI</option>
@@ -176,7 +174,7 @@ export default function Pacientes() {
                 value={formData.sexo}
                 onChange={handleChange}
                 required
-                className="w-full border px-3 py-2 rounded"
+                className="w-full border px-3 py-2 rounded bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
               >
                 <option value="Masculino">Masculino</option>
                 <option value="Femenino">Femenino</option>
@@ -203,10 +201,9 @@ export default function Pacientes() {
         )}
       </AnimatePresence>
 
-      {/* Vista tipo tarjeta solo visible en móviles */}
       <div className="grid gap-4 sm:hidden">
         {pacientes.length === 0 ? (
-          <p className="text-center text-gray-500">No hay pacientes.</p>
+          <p className="text-center text-gray-500 dark:text-gray-400">No hay pacientes.</p>
         ) : (
           pacientes.map((p) => (
             <motion.div
@@ -214,25 +211,19 @@ export default function Pacientes() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="bg-white border rounded shadow p-4 space-y-1"
+              className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded shadow p-4 space-y-1"
             >
-              <h2 className="text-lg font-semibold text-blue-700">{p.nombreCompleto}</h2>
+              <h2 className="text-lg font-semibold text-blue-700 dark:text-blue-400">{p.nombreCompleto}</h2>
               <p><strong>Documento:</strong> {p.tipoDocumento.toUpperCase()} - {p.numeroDocumento}</p>
               <p><strong>Correo:</strong> {p.correo}</p>
               <p><strong>Teléfono:</strong> {p.telefono}</p>
               <p><strong>EPS:</strong> {p.eps}</p>
               <p><strong>Sexo:</strong> {p.sexo}</p>
               <div className="flex gap-4 mt-2">
-                <button
-                  onClick={() => handleEdit(p)}
-                  className="text-blue-600 hover:underline"
-                >
+                <button onClick={() => handleEdit(p)} className="text-blue-600 dark:text-blue-400 hover:underline">
                   Editar
                 </button>
-                <button
-                  onClick={() => handleDelete(p._id)}
-                  className="text-red-600 hover:underline"
-                >
+                <button onClick={() => handleDelete(p._id)} className="text-red-600 hover:underline">
                   Eliminar
                 </button>
               </div>
@@ -241,10 +232,9 @@ export default function Pacientes() {
         )}
       </div>
 
-      {/* Tabla visible solo en pantallas sm+ */}
-      <div className="hidden sm:block overflow-x-auto rounded border bg-white mt-4">
+      <div className="hidden sm:block overflow-x-auto rounded border bg-white dark:bg-gray-900 dark:border-gray-700 mt-4">
         <table className="min-w-[720px] w-full text-sm">
-          <thead className="bg-gray-100 text-left">
+          <thead className="bg-gray-100 dark:bg-gray-700 text-left text-gray-900 dark:text-gray-100">
             <tr>
               {[
                 "Nombre Completo",
@@ -256,7 +246,7 @@ export default function Pacientes() {
                 "EPS",
                 "Acciones",
               ].map((title) => (
-                <th key={title} className="py-2 px-4 border-b font-medium">
+                <th key={title} className="py-2 px-4 border-b dark:border-gray-700 font-medium">
                   {title}
                 </th>
               ))}
@@ -269,26 +259,20 @@ export default function Pacientes() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="hover:bg-gray-50"
+                className="hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                <td className="py-2 px-4 border-b break-words">{p.nombreCompleto}</td>
-                <td className="py-2 px-4 border-b">{p.tipoDocumento.toUpperCase()}</td>
-                <td className="py-2 px-4 border-b">{p.numeroDocumento}</td>
-                <td className="py-2 px-4 border-b">{p.sexo}</td>
-                <td className="py-2 px-4 border-b">{p.correo}</td>
-                <td className="py-2 px-4 border-b">{p.telefono}</td>
-                <td className="py-2 px-4 border-b">{p.eps}</td>
-                <td className="py-2 px-4 border-b whitespace-nowrap flex gap-2">
-                  <button
-                    onClick={() => handleEdit(p)}
-                    className="text-blue-600 hover:underline"
-                  >
+                <td className="py-2 px-4 border-b dark:border-gray-700">{p.nombreCompleto}</td>
+                <td className="py-2 px-4 border-b dark:border-gray-700">{p.tipoDocumento.toUpperCase()}</td>
+                <td className="py-2 px-4 border-b dark:border-gray-700">{p.numeroDocumento}</td>
+                <td className="py-2 px-4 border-b dark:border-gray-700">{p.sexo}</td>
+                <td className="py-2 px-4 border-b dark:border-gray-700">{p.correo}</td>
+                <td className="py-2 px-4 border-b dark:border-gray-700">{p.telefono}</td>
+                <td className="py-2 px-4 border-b dark:border-gray-700">{p.eps}</td>
+                <td className="py-2 px-4 border-b dark:border-gray-700 whitespace-nowrap flex gap-2">
+                  <button onClick={() => handleEdit(p)} className="text-blue-600 dark:text-blue-400 hover:underline">
                     Editar
                   </button>
-                  <button
-                    onClick={() => handleDelete(p._id)}
-                    className="text-red-600 hover:underline"
-                  >
+                  <button onClick={() => handleDelete(p._id)} className="text-red-600 hover:underline">
                     Eliminar
                   </button>
                 </td>

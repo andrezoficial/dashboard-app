@@ -1,16 +1,26 @@
-import React from "react";
-import { useTheme } from "../context/ThemeContext";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
-export default function ThemeToggle() {
-  const { darkMode, toggleDarkMode } = useTheme();
+const ThemeContext = createContext();
+
+export function ThemeProvider({ children }) {
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem("tema") === "oscuro";
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+    localStorage.setItem("tema", darkMode ? "oscuro" : "claro");
+  }, [darkMode]);
+
+  const toggleTheme = () => setDarkMode(!darkMode);
 
   return (
-    <button
-      onClick={toggleDarkMode}
-      className="p-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-      aria-label="Toggle Dark Mode"
-    >
-      {darkMode ? "🌙 Modo Oscuro" : "☀️ Modo Claro"}
-    </button>
+    <ThemeContext.Provider value={{ darkMode, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
   );
+}
+
+export function useTheme() {
+  return useContext(ThemeContext);
 }
