@@ -1,31 +1,16 @@
-import React, { createContext, useState, useEffect } from "react";
+import React from "react";
+import { useTheme } from "../context/ThemeContext";
 
-export const ThemeContext = createContext();
-
-export function ThemeProvider({ children }) {
-  const [temaOscuro, setTemaOscuro] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("temaOscuro");
-      if (saved !== null) return saved === "true";
-      return window.matchMedia("(prefers-color-scheme: dark)").matches;
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    if (temaOscuro) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    localStorage.setItem("temaOscuro", temaOscuro.toString());
-  }, [temaOscuro]);
-
-  const toggleTema = () => setTemaOscuro((prev) => !prev);
+export default function ThemeToggle() {
+  const { darkMode, toggleDarkMode } = useTheme();
 
   return (
-    <ThemeContext.Provider value={{ temaOscuro, toggleTema }}>
-      {children}
-    </ThemeContext.Provider>
+    <button
+      onClick={toggleDarkMode}
+      className="p-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+      aria-label="Toggle Dark Mode"
+    >
+      {darkMode ? "🌙 Modo Oscuro" : "☀️ Modo Claro"}
+    </button>
   );
 }
