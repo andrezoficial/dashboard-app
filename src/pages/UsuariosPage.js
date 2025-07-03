@@ -5,7 +5,6 @@ import "react-toastify/dist/ReactToastify.css";
 import UserForm from "../components/UserForm";
 
 const API_URL = "https://backend-dashboard-v2.onrender.com/api";
-
 const roles = ["Todos", "Administrador", "Editor", "Lector"];
 const pageSize = 3;
 
@@ -13,11 +12,9 @@ export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [busqueda, setBusqueda] = useState("");
   const [filtroRol, setFiltroRol] = useState("Todos");
-
   const [formVisible, setFormVisible] = useState(false);
   const [usuarioEditando, setUsuarioEditando] = useState(null);
 
@@ -39,10 +36,9 @@ export default function UsuariosPage() {
   }, []);
 
   const usuariosFiltrados = usuarios.filter((usuario) => {
-    const cumpleBusqueda =
-      `${usuario.nombre} ${usuario.email} ${usuario.rol}`
-        .toLowerCase()
-        .includes(busqueda.toLowerCase());
+    const cumpleBusqueda = `${usuario.nombre} ${usuario.email} ${usuario.rol}`
+      .toLowerCase()
+      .includes(busqueda.toLowerCase());
     const cumpleFiltroRol = filtroRol === "Todos" ? true : usuario.rol === filtroRol;
     return cumpleBusqueda && cumpleFiltroRol;
   });
@@ -165,7 +161,48 @@ export default function UsuariosPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded border bg-white">
+      {/* Tarjetas para móviles */}
+      <div className="grid gap-4 sm:hidden">
+        {usuariosVisibles.length === 0 ? (
+          <p className="text-center text-gray-500 py-4">
+            No se encontraron resultados.
+          </p>
+        ) : (
+          usuariosVisibles.map((usuario) => (
+            <div
+              key={usuario._id}
+              className="bg-white border rounded p-4 shadow flex flex-col gap-1"
+            >
+              <h2 className="text-lg font-semibold text-blue-700">
+                {usuario.nombre}
+              </h2>
+              <p>
+                <strong>Correo:</strong> {usuario.email}
+              </p>
+              <p>
+                <strong>Rol:</strong> {usuario.rol}
+              </p>
+              <div className="flex gap-4 mt-2">
+                <button
+                  onClick={() => handleEditarUsuario(usuario)}
+                  className="text-blue-600 hover:underline"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => handleEliminar(usuario._id)}
+                  className="text-red-600 hover:underline"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Tabla para escritorio */}
+      <div className="hidden sm:block overflow-x-auto rounded border bg-white">
         <table className="w-full min-w-[600px] divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>
