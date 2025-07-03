@@ -31,13 +31,7 @@ export default function App() {
     <Router>
       <ToastContainer position="top-right" autoClose={3000} />
 
-      {/* Botón de alternar tema fijo en la pantalla */}
-      <button
-        onClick={() => setModoOscuro(!modoOscuro)}
-        className="fixed top-4 right-4 z-50 bg-gray-300 dark:bg-gray-700 text-black dark:text-white p-2 rounded"
-      >
-        {modoOscuro ? "🌙 Oscuro" : "☀️ Claro"}
-      </button>
+      
 
       <Routes>
         <Route

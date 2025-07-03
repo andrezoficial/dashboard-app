@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useTheme } from "../context/ThemeContext"; // Importa el contexto tema
+import { toast } from "react-toastify";
+import { useTheme } from "../context/ThemeContext"; 
 
 const API_URL = "https://backend-dashboard-v2.onrender.com/api";
 
@@ -52,7 +53,7 @@ export default function Citas() {
         alert("Cita actualizada");
       } else {
         await axios.post(`${API_URL}/citas`, form);
-        alert("Cita creada");
+        toast.success("Cita registrada y correo enviado al paciente");
       }
       setForm({ paciente: "", fecha: "", motivo: "" });
       setEditId(null);
