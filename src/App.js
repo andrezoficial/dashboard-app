@@ -8,8 +8,9 @@ import Pacientes from "./pages/Pacientes";
 import Citas from "./pages/Citas";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
 import ChatPage from "./pages/ChatPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage"; // <-- Importaste esta
 import { ToastContainer } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import AdminRoute from "./components/AdminRoute";
@@ -45,6 +46,9 @@ export default function App() {
             isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />
           }
         />
+
+        {/* Ruta pública para resetear contraseña */}
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
         <Route
           path="/"
