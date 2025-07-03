@@ -22,7 +22,6 @@ export default function Citas() {
   const fetchCitas = async () => {
     try {
       const res = await axios.get(`${API_URL}/citas`);
-      console.log("Citas recibidas:", res.data);
       setCitas(res.data);
     } catch {
       alert("Error cargando citas");
@@ -55,7 +54,7 @@ export default function Citas() {
       setForm({ paciente: "", fecha: "", motivo: "" });
       setEditId(null);
       fetchCitas();
-    } catch (error) {
+    } catch {
       alert("Error guardando cita");
     }
   };
@@ -82,14 +81,10 @@ export default function Citas() {
   };
 
   const citasFiltradas = citas.filter((cita) => {
-    const pacienteNombre =
-      cita.paciente && typeof cita.paciente === "object" && cita.paciente.nombreCompleto
-        ? cita.paciente.nombreCompleto
-        : "";
+    const nombrePaciente = cita.paciente?.nombreCompleto || "";
     const fecha = cita.fecha || "";
-
     return (
-      pacienteNombre.toLowerCase().includes(filtro.toLowerCase()) ||
+      nombrePaciente.toLowerCase().includes(filtro.toLowerCase()) ||
       fecha.includes(filtro)
     );
   });
@@ -126,9 +121,7 @@ export default function Citas() {
           {citasFiltradas.map((cita) => (
             <tr key={cita._id}>
               <td className="border p-2">
-                {cita.paciente && typeof cita.paciente === "object" && cita.paciente.nombreCompleto
-                  ? cita.paciente.nombreCompleto
-                  : "Paciente no asignado"}
+                {cita.paciente?.nombreCompleto || "Paciente no asignado"}
               </td>
               <td className="border p-2">{cita.fecha ? cita.fecha.split("T")[0] : ""}</td>
               <td className="border p-2">{cita.motivo}</td>
