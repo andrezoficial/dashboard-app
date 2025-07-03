@@ -52,57 +52,44 @@ export default function Pacientes() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (editId) {
-      fetch(`${API_BASE_URL}/pacientes/${editId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+    const url = editId
+      ? `${API_BASE_URL}/pacientes/${editId}`
+      : `${API_BASE_URL}/pacientes`;
+    const method = editId ? "PUT" : "POST";
+
+    fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    })
+      .then((res) => {
+        if (!res.ok)
+          throw new Error(
+            editId
+              ? "Error al actualizar paciente"
+              : "Error al crear paciente"
+          );
+        return res.json();
       })
-        .then((res) => {
-          if (!res.ok) throw new Error("Error al actualizar paciente");
-          return res.json();
-        })
-        .then((updatedPaciente) => {
+      .then((paciente) => {
+        if (editId) {
           setPacientes(
-            pacientes.map((p) => (p._id === editId ? updatedPaciente : p))
+            pacientes.map((p) => (p._id === editId ? paciente : p))
           );
           toast.success("Paciente actualizado correctamente");
-          resetForm();
-        })
-        .catch((error) => {
-          toast.error(error.message);
-        });
-    } else {
-      fetch(`${API_BASE_URL}/pacientes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error("Error al crear paciente");
-          return res.json();
-        })
-        .then((nuevoPaciente) => {
-          setPacientes([...pacientes, nuevoPaciente]);
+        } else {
+          setPacientes([...pacientes, paciente]);
           toast.success("Paciente creado exitosamente");
-          resetForm();
-        })
-        .catch((error) => {
-          toast.error(error.message);
-        });
-    }
+        }
+        resetForm();
+      })
+      .catch((error) => {
+        toast.error(error.message);
+      });
   };
 
   const handleEdit = (paciente) => {
-    setFormData({
-      nombreCompleto: paciente.nombreCompleto,
-      tipoDocumento: paciente.tipoDocumento,
-      numeroDocumento: paciente.numeroDocumento,
-      sexo: paciente.sexo,
-      correo: paciente.correo,
-      telefono: paciente.telefono,
-      eps: paciente.eps,
-    });
+    setFormData({ ...paciente });
     setEditId(paciente._id);
     setFormVisible(true);
   };
@@ -110,9 +97,7 @@ export default function Pacientes() {
   const handleDelete = (id) => {
     if (!window.confirm("¿Estás seguro de eliminar este paciente?")) return;
 
-    fetch(`${API_BASE_URL}/pacientes/${id}`, {
-      method: "DELETE",
-    })
+    fetch(`${API_BASE_URL}/pacientes/${id}`, { method: "DELETE" })
       .then((res) => {
         if (!res.ok) throw new Error("Error al eliminar paciente");
         setPacientes(pacientes.filter((p) => p._id !== id));
@@ -124,7 +109,7 @@ export default function Pacientes() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-4 px-2 sm:px-4">
+    <div className="w-full max-w-6xl mx-auto p-4">
       <ToastContainer position="top-right" autoClose={3000} />
 
       <h1 className="text-xl sm:text-2xl font-bold mb-4">Pacientes</h1>
@@ -151,11 +136,7 @@ export default function Pacientes() {
           >
             {[
               { label: "Nombre Completo", name: "nombreCompleto", type: "text" },
-              {
-                label: "Número de Documento",
-                name: "numeroDocumento",
-                type: "text",
-              },
+              { label: "Número de Documento", name: "numeroDocumento", type: "text" },
               { label: "Correo", name: "correo", type: "email" },
               { label: "Teléfono", name: "telefono", type: "text" },
               { label: "EPS", name: "eps", type: "text" },
@@ -222,11 +203,47 @@ export default function Pacientes() {
         )}
       </AnimatePresence>
 
-      <div
-        className="overflow-x-auto rounded border bg-white"
-        style={{ WebkitOverflowScrolling: "touch" }}
-      >
-        <table className="min-w-[720px] w-full text-sm table-fixed">
+      {/* Vista tipo tarjeta solo visible en móviles */}
+      <div className="grid gap-4 sm:hidden">
+        {pacientes.length === 0 ? (
+          <p className="text-center text-gray-500">No hay pacientes.</p>
+        ) : (
+          pacientes.map((p) => (
+            <motion.div
+              key={p._id}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="bg-white border rounded shadow p-4 space-y-1"
+            >
+              <h2 className="text-lg font-semibold text-blue-700">{p.nombreCompleto}</h2>
+              <p><strong>Documento:</strong> {p.tipoDocumento.toUpperCase()} - {p.numeroDocumento}</p>
+              <p><strong>Correo:</strong> {p.correo}</p>
+              <p><strong>Teléfono:</strong> {p.telefono}</p>
+              <p><strong>EPS:</strong> {p.eps}</p>
+              <p><strong>Sexo:</strong> {p.sexo}</p>
+              <div className="flex gap-4 mt-2">
+                <button
+                  onClick={() => handleEdit(p)}
+                  className="text-blue-600 hover:underline"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => handleDelete(p._id)}
+                  className="text-red-600 hover:underline"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
+
+      {/* Tabla visible solo en pantallas sm+ */}
+      <div className="hidden sm:block overflow-x-auto rounded border bg-white mt-4">
+        <table className="min-w-[720px] w-full text-sm">
           <thead className="bg-gray-100 text-left">
             <tr>
               {[
@@ -246,60 +263,37 @@ export default function Pacientes() {
             </tr>
           </thead>
           <tbody>
-            {pacientes.length === 0 ? (
-              <tr>
-                <td colSpan="8" className="text-center py-4">
-                  No hay pacientes.
+            {pacientes.map((p) => (
+              <motion.tr
+                key={p._id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="hover:bg-gray-50"
+              >
+                <td className="py-2 px-4 border-b break-words">{p.nombreCompleto}</td>
+                <td className="py-2 px-4 border-b">{p.tipoDocumento.toUpperCase()}</td>
+                <td className="py-2 px-4 border-b">{p.numeroDocumento}</td>
+                <td className="py-2 px-4 border-b">{p.sexo}</td>
+                <td className="py-2 px-4 border-b">{p.correo}</td>
+                <td className="py-2 px-4 border-b">{p.telefono}</td>
+                <td className="py-2 px-4 border-b">{p.eps}</td>
+                <td className="py-2 px-4 border-b whitespace-nowrap flex gap-2">
+                  <button
+                    onClick={() => handleEdit(p)}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p._id)}
+                    className="text-red-600 hover:underline"
+                  >
+                    Eliminar
+                  </button>
                 </td>
-              </tr>
-            ) : (
-              pacientes.map((p) => (
-                <motion.tr
-                  key={p._id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  whileHover={{ backgroundColor: "#f9fafb" }}
-                  className="hover:bg-gray-50"
-                >
-                  <td className="py-2 px-4 border-b break-words whitespace-normal">
-                    {p.nombreCompleto}
-                  </td>
-                  <td className="py-2 px-4 border-b break-words whitespace-normal">
-                    {p.tipoDocumento.toUpperCase()}
-                  </td>
-                  <td className="py-2 px-4 border-b break-words whitespace-normal">
-                    {p.numeroDocumento}
-                  </td>
-                  <td className="py-2 px-4 border-b break-words whitespace-normal">
-                    {p.sexo}
-                  </td>
-                  <td className="py-2 px-4 border-b break-words whitespace-normal">
-                    {p.correo}
-                  </td>
-                  <td className="py-2 px-4 border-b break-words whitespace-normal">
-                    {p.telefono}
-                  </td>
-                  <td className="py-2 px-4 border-b break-words whitespace-normal">
-                    {p.eps}
-                  </td>
-                  <td className="py-2 px-4 whitespace-nowrap flex gap-2">
-                    <button
-                      onClick={() => handleEdit(p)}
-                      className="text-blue-600 hover:underline"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(p._id)}
-                      className="text-red-600 hover:underline"
-                    >
-                      Eliminar
-                    </button>
-                  </td>
-                </motion.tr>
-              ))
-            )}
+              </motion.tr>
+            ))}
           </tbody>
         </table>
       </div>
