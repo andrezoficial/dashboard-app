@@ -89,7 +89,7 @@ export default function DashboardLayout() {
                 sidebarOpen ? "block" : "hidden"
               }`}
             >
-              Admin
+              Vior Clinics
             </h1>
           </div>
 

@@ -7,7 +7,7 @@ export default function Dashboard() {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>Bienvenido al Dashboard</h1>
+      <h1>Bienvenido a Vior Clinic</h1>
       <h3>Rol: {user.role}</h3>
     </div>
   );
