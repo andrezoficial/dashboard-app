@@ -9,9 +9,12 @@ import {
   FiUser,
   FiCalendar,
   FiMessageSquare,
+  FiSun,
+  FiMoon,
 } from "react-icons/fi";
 import { FaGithub } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext"; // <-- Importa el contexto tema
 import { toast } from "react-toastify";
 
 export default function DashboardLayout() {
@@ -20,6 +23,9 @@ export default function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
+
+  // Contexto tema
+  const { darkMode, toggleTheme } = useTheme();
 
   useEffect(() => {
     const handleResize = () => {
@@ -54,20 +60,20 @@ export default function DashboardLayout() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="flex min-h-screen overflow-hidden bg-gray-100">
+    <div className={`${darkMode ? "dark" : ""} flex min-h-screen overflow-hidden bg-gray-100 dark:bg-gray-900`}>
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 flex flex-col transition-width duration-300 ease-in-out fixed md:static z-30 top-0 left-0 h-full ${
+        className={`bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-width duration-300 ease-in-out fixed md:static z-30 top-0 left-0 h-full ${
           sidebarOpen ? "w-64" : "w-16"
         } ${isMobile ? (sidebarOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}`}
         style={{ transitionProperty: "width, transform" }}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-          <h1 className={`text-xl font-bold text-blue-600 ${sidebarOpen ? "block" : "hidden"}`}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <h1 className={`text-xl font-bold text-blue-600 dark:text-blue-400 ${sidebarOpen ? "block" : "hidden"}`}>
             Admin
           </h1>
           <button
-            className="p-2 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 md:hidden"
+            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 md:hidden"
             onClick={() => setSidebarOpen(false)}
             aria-label="Cerrar sidebar"
           >
@@ -86,11 +92,11 @@ export default function DashboardLayout() {
                 <li
                   className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors rounded ${
                     location.pathname.startsWith(item.path)
-                      ? "bg-blue-200 text-blue-800"
-                      : "hover:bg-blue-100"
+                      ? "bg-blue-200 dark:bg-blue-700 text-blue-800 dark:text-blue-300"
+                      : "hover:bg-blue-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
                   }`}
                 >
-                  <span className="text-blue-600">{item.icon}</span>
+                  <span className="text-blue-600 dark:text-blue-400">{item.icon}</span>
                   <span className={`${sidebarOpen ? "inline" : "hidden"} font-medium`}>
                     {item.name}
                   </span>
@@ -114,31 +120,53 @@ export default function DashboardLayout() {
       <div className="flex flex-col flex-1 md:ml-64 min-h-screen">
         {/* Navbar */}
         {isMobile ? (
-          <header className="flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 shadow-sm fixed top-0 left-0 right-0 z-30">
+          <header className="flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 shadow-sm fixed top-0 left-0 right-0 z-30">
             <button
-              className="p-2 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               onClick={() => setSidebarOpen(true)}
               aria-label="Abrir sidebar"
             >
               <FiMenu size={24} />
             </button>
-            <h2 className="text-xl font-semibold text-gray-700">{getActiveName()}</h2>
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Logout
-            </button>
+            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">{getActiveName()}</h2>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Logout
+              </button>
+
+              <button
+                onClick={toggleTheme}
+                aria-label="Toggle Theme"
+                className="px-3 py-1 rounded bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition"
+              >
+                {darkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
+              </button>
+            </div>
           </header>
         ) : (
-          <header className="flex items-center justify-between bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-            <h2 className="text-2xl font-semibold text-gray-700">{getActiveName()}</h2>
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Logout
-            </button>
+          <header className="flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 shadow-sm">
+            <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300">{getActiveName()}</h2>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Logout
+              </button>
+
+              <button
+                onClick={toggleTheme}
+                aria-label="Toggle Theme"
+                className="px-3 py-1 rounded bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition"
+              >
+                {darkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
+              </button>
+            </div>
           </header>
         )}
 
@@ -148,14 +176,14 @@ export default function DashboardLayout() {
         </main>
 
         {/* Footer */}
-        <footer className="bg-white text-center py-4 border-t border-gray-200 text-sm text-gray-600">
+        <footer className="bg-white dark:bg-gray-800 text-center py-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300">
           <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
             <span>© {currentYear} — Desarrollado por</span>
             <a
               href="https://github.com/andrezoficial"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:underline flex items-center gap-1"
+              className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
             >
               <FaGithub className="text-lg" />
               andrezoficial
