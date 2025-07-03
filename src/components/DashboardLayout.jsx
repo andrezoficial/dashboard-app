@@ -14,7 +14,7 @@ import {
 } from "react-icons/fi";
 import { FaGithub } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext"; // <-- Importa el contexto tema
+import { useTheme } from "../context/ThemeContext"; // Contexto tema
 import { toast } from "react-toastify";
 
 export default function DashboardLayout() {
@@ -60,7 +60,9 @@ export default function DashboardLayout() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className={`${darkMode ? "dark" : ""} flex min-h-screen overflow-hidden bg-gray-100 dark:bg-gray-900`}>
+    <div
+      className={`${darkMode ? "dark" : ""} flex min-h-screen overflow-hidden bg-gray-100 dark:bg-gray-900`}
+    >
       {/* Sidebar */}
       <aside
         className={`bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-width duration-300 ease-in-out fixed md:static z-30 top-0 left-0 h-full ${
@@ -69,7 +71,11 @@ export default function DashboardLayout() {
         style={{ transitionProperty: "width, transform" }}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-          <h1 className={`text-xl font-bold text-blue-600 dark:text-blue-400 ${sidebarOpen ? "block" : "hidden"}`}>
+          <h1
+            className={`text-xl font-bold text-blue-600 dark:text-blue-400 ${
+              sidebarOpen ? "block" : "hidden"
+            }`}
+          >
             Admin
           </h1>
           <button
@@ -121,6 +127,7 @@ export default function DashboardLayout() {
         {/* Navbar */}
         {isMobile ? (
           <header className="flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 shadow-sm fixed top-0 left-0 right-0 z-30">
+            {/* Botón abrir sidebar */}
             <button
               className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               onClick={() => setSidebarOpen(true)}
@@ -128,9 +135,14 @@ export default function DashboardLayout() {
             >
               <FiMenu size={24} />
             </button>
-            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">{getActiveName()}</h2>
 
-            <div className="flex items-center gap-2">
+            {/* Título centrado */}
+            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+              {getActiveName()}
+            </h2>
+
+            {/* Botones Logout y Tema */}
+            <div className="flex items-center gap-2 z-10">
               <button
                 onClick={handleLogout}
                 className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -149,9 +161,16 @@ export default function DashboardLayout() {
           </header>
         ) : (
           <header className="flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 shadow-sm">
-            <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300">{getActiveName()}</h2>
+            {/* Logo + Título */}
+            <div className="flex items-center gap-4">
+              <img src="/logo.png" alt="Logo" className="h-8" />
+              <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300">
+                {getActiveName()}
+              </h2>
+            </div>
 
-            <div className="flex items-center gap-2">
+            {/* Botones Logout y Tema */}
+            <div className="flex items-center gap-2 z-10">
               <button
                 onClick={handleLogout}
                 className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"

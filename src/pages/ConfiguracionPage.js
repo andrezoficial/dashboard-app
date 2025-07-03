@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { useTheme } from "../context/ThemeContext";
 
 const API_URL = "https://backend-dashboard-v2.onrender.com/api/configuracion";
 const token = localStorage.getItem("token");
@@ -16,6 +17,8 @@ if (token) {
 }
 
 export default function Configuracion() {
+  const { darkMode, toggleTheme } = useTheme();
+
   const [activeTab, setActiveTab] = useState("perfil");
 
   // Datos perfil
@@ -28,10 +31,6 @@ export default function Configuracion() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   // Configuraciones generales
-  const [temaOscuro, setTemaOscuro] = useState(() => {
-    // Intenta cargar la preferencia guardada localmente
-    return localStorage.getItem("temaOscuro") === "true";
-  });
   const [notificaciones, setNotificaciones] = useState(true);
 
   // Rol
@@ -45,7 +44,9 @@ export default function Configuracion() {
       .get(`${API_URL}/${usuarioId}`, config)
       .then((res) => {
         const data = res.data;
-        setTemaOscuro(data.temaOscuro ?? false);
+        // Tema se maneja por contexto, pero para mantener sincronía:
+        // Si backend manda algo distinto al contexto, puedes actualizar contexto aquí:
+        // O simplemente ignora temaOscuro del backend y usa solo contexto
         setNotificaciones(data.notificaciones ?? true);
         setRole(data.rolSeleccionado || "Admin");
         setNombre(data.nombre || "Admin");
@@ -54,24 +55,14 @@ export default function Configuracion() {
       .catch((err) => console.error("Error al cargar configuración", err));
   }, []);
 
-  // Aplicar modo oscuro en <body>
-  useEffect(() => {
-    if (temaOscuro) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    // Guardar en localStorage
-    localStorage.setItem("temaOscuro", temaOscuro.toString());
-  }, [temaOscuro]);
-
+  // Guardar configuracion (sin temaOscuro porque está en contexto)
   const handleSaveConfiguracion = async (e) => {
     e.preventDefault();
     if (!usuarioId) return alert("No se encontró usuario.");
     try {
       await axios.post(
         `${API_URL}/${usuarioId}`,
-        { temaOscuro, notificaciones, rolSeleccionado: role, nombre, email },
+        { notificaciones, rolSeleccionado: role, nombre, email, temaOscuro: darkMode },
         config
       );
       alert("Configuración guardada");
@@ -99,31 +90,27 @@ export default function Configuracion() {
     }
   };
 
-  // Clases para contenedor principal, cambia según tema
   const containerClasses =
     "w-full max-w-3xl mx-auto p-4 transition-colors duration-300 " +
-    (temaOscuro
-      ? "bg-gray-900 text-gray-100"
-      : "bg-white text-gray-900");
+    (darkMode ? "bg-gray-900 text-gray-100" : "bg-white text-gray-900");
 
   const tabClasses = (tab) =>
     `px-4 py-2 whitespace-nowrap border-b-2 cursor-pointer ${
       activeTab === tab
         ? "border-blue-500 text-blue-500 font-semibold"
-        : temaOscuro
+        : darkMode
         ? "border-transparent text-gray-400 hover:text-blue-400"
         : "border-transparent text-gray-600 hover:text-blue-600"
     }`;
 
   const inputClasses =
     "w-full p-2 border rounded " +
-    (temaOscuro
+    (darkMode
       ? "bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400"
       : "bg-white border-gray-300 text-gray-900 placeholder-gray-600");
 
   const buttonClasses =
-    "w-full sm:w-auto px-4 py-2 rounded text-white hover:bg-blue-700 transition-colors duration-200 " +
-    (temaOscuro ? "bg-blue-600" : "bg-blue-600");
+    "w-full sm:w-auto px-4 py-2 rounded text-white hover:bg-blue-700 transition-colors duration-200 bg-blue-600";
 
   const labelClasses = "block font-semibold mb-1";
 
@@ -224,11 +211,14 @@ export default function Configuracion() {
             <input
               type="checkbox"
               id="temaOscuro"
-              checked={temaOscuro}
-              onChange={() => setTemaOscuro(!temaOscuro)}
+              checked={darkMode}
+              onChange={toggleTheme}
               className="w-5 h-5 cursor-pointer"
             />
-            <label htmlFor="temaOscuro" className="font-medium select-none cursor-pointer">
+            <label
+              htmlFor="temaOscuro"
+              className="font-medium select-none cursor-pointer"
+            >
               Tema Oscuro
             </label>
           </div>
@@ -240,7 +230,10 @@ export default function Configuracion() {
               onChange={() => setNotificaciones(!notificaciones)}
               className="w-5 h-5 cursor-pointer"
             />
-            <label htmlFor="notificaciones" className="font-medium select-none cursor-pointer">
+            <label
+              htmlFor="notificaciones"
+              className="font-medium select-none cursor-pointer"
+            >
               Recibir Notificaciones
             </label>
           </div>
