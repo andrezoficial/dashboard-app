@@ -22,6 +22,7 @@ export default function Citas() {
   const fetchCitas = async () => {
     try {
       const res = await axios.get(`${API_URL}/citas`);
+      console.log("Citas recibidas:", res.data);
       setCitas(res.data);
     } catch {
       alert("Error cargando citas");
@@ -81,8 +82,11 @@ export default function Citas() {
   };
 
   const citasFiltradas = citas.filter((cita) => {
-    const pacienteNombre = cita.paciente && cita.paciente.nombreCompleto ? cita.paciente.nombreCompleto : "";
-    const fecha = cita.fecha ? cita.fecha : "";
+    const pacienteNombre =
+      cita.paciente && typeof cita.paciente === "object" && cita.paciente.nombreCompleto
+        ? cita.paciente.nombreCompleto
+        : "";
+    const fecha = cita.fecha || "";
 
     return (
       pacienteNombre.toLowerCase().includes(filtro.toLowerCase()) ||
@@ -122,7 +126,7 @@ export default function Citas() {
           {citasFiltradas.map((cita) => (
             <tr key={cita._id}>
               <td className="border p-2">
-                {cita.paciente && cita.paciente.nombreCompleto
+                {cita.paciente && typeof cita.paciente === "object" && cita.paciente.nombreCompleto
                   ? cita.paciente.nombreCompleto
                   : "Paciente no asignado"}
               </td>
