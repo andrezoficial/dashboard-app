@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useTheme } from "../context/ThemeContext"; // Importa el contexto tema
 
 const API_URL = "https://backend-dashboard-v2.onrender.com/api";
 
 export default function Citas() {
+  const { darkMode } = useTheme(); // Obtiene el modo oscuro del contexto
+
   const [citas, setCitas] = useState([]);
   const [pacientes, setPacientes] = useState([]);
   const [form, setForm] = useState({
@@ -88,14 +91,45 @@ export default function Citas() {
     }
   };
 
-const citasFiltradas = citas.filter((cita) => {
-  const nombre = cita.paciente?.nombreCompleto?.toLowerCase() || "";
-  const fecha = cita.fecha || "";
-  return nombre.includes(filtro.toLowerCase()) || fecha.includes(filtro);
-});
+  const citasFiltradas = citas.filter((cita) => {
+    const nombre = cita.paciente?.nombreCompleto?.toLowerCase() || "";
+    const fecha = cita.fecha || "";
+    return nombre.includes(filtro.toLowerCase()) || fecha.includes(filtro);
+  });
+
+  // Clases condicionales para modo oscuro/claro:
+  const containerClasses = `max-w-4xl mx-auto p-4 ${
+    darkMode ? "bg-gray-900 text-gray-100" : "bg-white text-gray-900"
+  }`;
+
+  const inputClasses = `border p-2 w-full rounded ${
+    darkMode
+      ? "bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400"
+      : "bg-white border-gray-300 text-gray-900 placeholder-gray-600"
+  }`;
+
+  const tableHeaderClasses = `border p-2 ${
+    darkMode ? "bg-gray-700 text-gray-100" : "bg-gray-200 text-gray-900"
+  }`;
+
+  const tableCellClasses = `border p-2 ${
+    darkMode ? "border-gray-700 text-gray-100" : "border-gray-300 text-gray-900"
+  }`;
+
+  const buttonEditClasses = `px-2 py-1 rounded ${
+    darkMode ? "bg-yellow-500 text-gray-900 hover:bg-yellow-600" : "bg-yellow-400 text-gray-900 hover:bg-yellow-500"
+  }`;
+
+  const buttonDeleteClasses = `px-2 py-1 rounded text-white ${
+    darkMode ? "bg-red-600 hover:bg-red-700" : "bg-red-500 hover:bg-red-600"
+  }`;
+
+  const buttonSubmitClasses = `bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700`;
+
+  const buttonCancelClasses = `ml-2 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600`;
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
+    <div className={containerClasses}>
       <h1 className="text-2xl font-bold mb-4">Gestión de Citas Médicas</h1>
 
       <input
@@ -103,16 +137,16 @@ const citasFiltradas = citas.filter((cita) => {
         placeholder="Filtrar por paciente o fecha"
         value={filtro}
         onChange={(e) => setFiltro(e.target.value)}
-        className="border p-2 mb-4 w-full"
+        className={inputClasses + " mb-4"}
       />
 
-      <table className="w-full border-collapse border border-gray-300 mb-6">
+      <table className="w-full border-collapse border mb-6" style={{ borderColor: darkMode ? "#374151" : "#D1D5DB" }}>
         <thead>
-          <tr className="bg-gray-200">
-            <th className="border p-2">Paciente</th>
-            <th className="border p-2">Fecha</th>
-            <th className="border p-2">Motivo</th>
-            <th className="border p-2">Acciones</th>
+          <tr>
+            <th className={tableHeaderClasses}>Paciente</th>
+            <th className={tableHeaderClasses}>Fecha</th>
+            <th className={tableHeaderClasses}>Motivo</th>
+            <th className={tableHeaderClasses}>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -125,22 +159,26 @@ const citasFiltradas = citas.filter((cita) => {
           )}
           {citasFiltradas.map((cita) => (
             <tr key={cita._id}>
-              <td className="border p-2">
-                {(cita.paciente && typeof cita.paciente === "object" && cita.paciente.nombreCompleto) ||
-                 "Paciente no asignado"}
+              <td className={tableCellClasses}>
+                {(cita.paciente &&
+                  typeof cita.paciente === "object" &&
+                  cita.paciente.nombreCompleto) ||
+                  "Paciente no asignado"}
               </td>
-              <td className="border p-2">{cita.fecha ? cita.fecha.split("T")[0] : ""}</td>
-              <td className="border p-2">{cita.motivo}</td>
-              <td className="border p-2 space-x-2">
+              <td className={tableCellClasses}>
+                {cita.fecha ? cita.fecha.split("T")[0] : ""}
+              </td>
+              <td className={tableCellClasses}>{cita.motivo}</td>
+              <td className={tableCellClasses + " space-x-2"}>
                 <button
                   onClick={() => handleEdit(cita)}
-                  className="bg-yellow-400 px-2 py-1 rounded"
+                  className={buttonEditClasses}
                 >
                   Editar
                 </button>
                 <button
                   onClick={() => handleDelete(cita._id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded"
+                  className={buttonDeleteClasses}
                 >
                   Cancelar
                 </button>
@@ -160,7 +198,7 @@ const citasFiltradas = citas.filter((cita) => {
           value={form.paciente}
           onChange={handleChange}
           required
-          className="border p-2 w-full"
+          className={inputClasses}
         >
           <option value="">Selecciona un paciente</option>
           {pacientes.map((p) => (
@@ -176,7 +214,7 @@ const citasFiltradas = citas.filter((cita) => {
           value={form.fecha}
           onChange={handleChange}
           required
-          className="border p-2 w-full"
+          className={inputClasses}
         />
 
         <input
@@ -186,13 +224,10 @@ const citasFiltradas = citas.filter((cita) => {
           value={form.motivo}
           onChange={handleChange}
           required
-          className="border p-2 w-full"
+          className={inputClasses}
         />
 
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
+        <button type="submit" className={buttonSubmitClasses}>
           {editId ? "Actualizar" : "Crear"}
         </button>
 
@@ -203,7 +238,7 @@ const citasFiltradas = citas.filter((cita) => {
               setEditId(null);
               setForm({ paciente: "", fecha: "", motivo: "" });
             }}
-            className="ml-2 bg-gray-400 text-white px-4 py-2 rounded"
+            className={buttonCancelClasses}
           >
             Cancelar edición
           </button>
