@@ -54,14 +54,14 @@ export default function Citas() {
       setForm({ paciente: "", fecha: "", motivo: "" });
       setEditId(null);
       fetchCitas();
-    } catch (error) {
+    } catch {
       alert("Error guardando cita");
     }
   };
 
   const handleEdit = (cita) => {
     setForm({
-      paciente: cita.paciente?._id || cita.paciente || "", // si paciente es objeto o id
+      paciente: cita.paciente?._id || cita.paciente || "",
       fecha: cita.fecha ? cita.fecha.split("T")[0] : "",
       motivo: cita.motivo || "",
     });
@@ -81,13 +81,15 @@ export default function Citas() {
   };
 
   const citasFiltradas = citas.filter((cita) => {
-    // Obtener nombre del paciente de forma segura
     const pacienteNombre = (() => {
-      if (!cita.paciente) return "";
-      if (typeof cita.paciente === "object") return cita.paciente.nombreCompleto || "";
-      // Si paciente es solo ID, buscar en pacientes
-      const p = pacientes.find((pac) => pac._id === cita.paciente);
-      return p ? p.nombreCompleto : "";
+      if (cita.paciente && typeof cita.paciente === "object") {
+        return cita.paciente.nombreCompleto || "";
+      }
+      if (typeof cita.paciente === "string") {
+        const p = pacientes.find((pac) => pac._id === cita.paciente);
+        return p ? p.nombreCompleto : "";
+      }
+      return "";
     })();
 
     return (
@@ -129,14 +131,19 @@ export default function Citas() {
             <tr key={cita._id}>
               <td className="border p-2">
                 {(() => {
-                  if (!cita.paciente) return "Paciente no asignado";
-                  if (typeof cita.paciente === "object")
-                    return cita.paciente?.nombreCompleto || "Paciente sin nombre";
-                  const p = pacientes.find((pac) => pac._id === cita.paciente);
-                  return p ? p.nombreCompleto : "Paciente no encontrado";
+                  if (cita.paciente && typeof cita.paciente === "object") {
+                    return cita.paciente.nombreCompleto || "Paciente sin nombre";
+                  }
+                  if (typeof cita.paciente === "string") {
+                    const p = pacientes.find((pac) => pac._id === cita.paciente);
+                    return p ? p.nombreCompleto : "Paciente no encontrado";
+                  }
+                  return "Paciente no asignado";
                 })()}
               </td>
-              <td className="border p-2">{cita.fecha ? cita.fecha.split("T")[0] : ""}</td>
+              <td className="border p-2">
+                {cita.fecha ? cita.fecha.split("T")[0] : ""}
+              </td>
               <td className="border p-2">{cita.motivo}</td>
               <td className="border p-2 space-x-2">
                 <button
