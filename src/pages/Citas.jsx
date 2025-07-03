@@ -119,49 +119,56 @@ export default function Citas() {
             <th className="border p-2">Acciones</th>
           </tr>
         </thead>
-        <tbody>
-          {citasFiltradas.length === 0 && (
-            <tr>
-              <td colSpan="4" className="text-center p-4 text-gray-500">
-                No hay citas
-              </td>
-            </tr>
-          )}
-          {citasFiltradas.map((cita) => (
-            <tr key={cita._id}>
-              <td className="border p-2">
-                {(() => {
-                  if (cita.paciente && typeof cita.paciente === "object") {
-                    return cita.paciente.nombreCompleto || "Paciente sin nombre";
-                  }
-                  if (typeof cita.paciente === "string") {
-                    const p = pacientes.find((pac) => pac._id === cita.paciente);
-                    return p ? p.nombreCompleto : "Paciente no encontrado";
-                  }
-                  return "Paciente no asignado";
-                })()}
-              </td>
-              <td className="border p-2">
-                {cita.fecha ? cita.fecha.split("T")[0] : ""}
-              </td>
-              <td className="border p-2">{cita.motivo}</td>
-              <td className="border p-2 space-x-2">
-                <button
-                  onClick={() => handleEdit(cita)}
-                  className="bg-yellow-400 px-2 py-1 rounded"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => handleDelete(cita._id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded"
-                >
-                  Cancelar
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
+<tbody>
+  {citasFiltradas.length === 0 && (
+    <tr>
+      <td colSpan="4" className="text-center p-4 text-gray-500">
+        No hay citas
+      </td>
+    </tr>
+  )}
+  {citasFiltradas.map((cita) => {
+    const getNombrePaciente = () => {
+      try {
+        if (typeof cita.paciente === "object" && cita.paciente !== null) {
+          return cita.paciente.nombreCompleto || "Paciente sin nombre";
+        } else if (typeof cita.paciente === "string") {
+          const pacienteEncontrado = pacientes.find(
+            (p) => p._id === cita.paciente
+          );
+          return pacienteEncontrado?.nombreCompleto || "Paciente no encontrado";
+        }
+        return "Paciente no asignado";
+      } catch {
+        return "Error al obtener paciente";
+      }
+    };
+
+    return (
+      <tr key={cita._id}>
+        <td className="border p-2">{getNombrePaciente()}</td>
+        <td className="border p-2">
+          {cita.fecha ? cita.fecha.split("T")[0] : ""}
+        </td>
+        <td className="border p-2">{cita.motivo}</td>
+        <td className="border p-2 space-x-2">
+          <button
+            onClick={() => handleEdit(cita)}
+            className="bg-yellow-400 px-2 py-1 rounded"
+          >
+            Editar
+          </button>
+          <button
+            onClick={() => handleDelete(cita._id)}
+            className="bg-red-500 text-white px-2 py-1 rounded"
+          >
+            Cancelar
+          </button>
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
       </table>
 
       <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
