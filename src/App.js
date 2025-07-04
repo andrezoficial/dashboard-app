@@ -10,6 +10,7 @@ import Citas from "./pages/Citas";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
 import ChatPage from "./pages/ChatPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import FormularioHistoriaClinica from "./components/FormularioHistoriaClinica";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "./context/AuthContext";
@@ -39,13 +40,21 @@ export default function App() {
         {/* Login */}
         <Route
           path="/login"
-          element={
-            isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />
-          }
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
         />
 
         {/* Recuperación de contraseña */}
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+
+        {/* Ruta para historia clínica */}
+        <Route
+          path="/pacientes/:id/historia-clinica"
+          element={
+            <PrivateRoute>
+              <FormularioHistoriaClinica />
+            </PrivateRoute>
+          }
+        />
 
         {/* Dashboard privado */}
         <Route
