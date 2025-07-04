@@ -29,10 +29,13 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await axios.post("https://backend-dashboard-v2.onrender.com/api/auth/login", {
-        email: correo,
-        password,
-      });
+      const res = await axios.post(
+        "https://backend-dashboard-v2.onrender.com/api/auth/login",
+        {
+          email: correo,
+          password,
+        }
+      );
       const { usuario, token } = res.data;
       login(usuario, token);
       toast.success("Login exitoso");
@@ -60,9 +63,12 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      await axios.post("https://backend-dashboard-v2.onrender.com/api/auth/forgot-password", {
-        email: correo,
-      });
+      await axios.post(
+        "https://backend-dashboard-v2.onrender.com/api/auth/forgot-password",
+        {
+          email: correo,
+        }
+      );
       toast.success("Revisa tu correo para restablecer tu contraseña");
       setForgotPasswordMode(false);
       setCorreo("");
@@ -82,7 +88,9 @@ export default function LoginPage() {
         {/* Left info panel */}
         <div className="p-6 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 flex flex-col justify-center items-center text-center">
           <img src={logoVior} alt="ViorClinic Logo" className="h-20 mb-4" />
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white">Bienvenido a ViorClinic</h2>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+            Bienvenido a ViorClinic
+          </h2>
           <p className="text-gray-600 dark:text-gray-300 mt-2">
             Tu puerta digital a citas médicas rápidas, seguras y sin complicaciones.
           </p>
@@ -98,6 +106,14 @@ export default function LoginPage() {
 
         {/* Right form panel */}
         <div className="p-6">
+          {/* Botón para volver a LandingPage */}
+          <button
+            onClick={() => navigate("/")}
+            className="mb-4 text-blue-600 hover:underline font-semibold"
+          >
+            ← Volver a la página principal
+          </button>
+
           {!forgotPasswordMode ? (
             <>
               <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 text-center">
