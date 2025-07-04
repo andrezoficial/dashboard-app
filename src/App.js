@@ -46,17 +46,7 @@ export default function App() {
         {/* Recuperación de contraseña */}
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-        {/* Ruta para historia clínica */}
-        <Route
-          path="/pacientes/:id/historia-clinica"
-          element={
-            <PrivateRoute>
-              <FormularioHistoriaClinica />
-            </PrivateRoute>
-          }
-        />
-
-        {/* Dashboard privado */}
+        {/* Dashboard privado con layout */}
         <Route
           path="/dashboard"
           element={
@@ -75,6 +65,8 @@ export default function App() {
             }
           />
           <Route path="pacientes" element={<Pacientes />} />
+          {/* Ruta historia clínica dentro del dashboard */}
+          <Route path="pacientes/:id/historia-clinica" element={<FormularioHistoriaClinica />} />
           <Route path="citas" element={<AdminRoute><Citas /></AdminRoute>} />
           <Route path="configuracion" element={<AdminRoute><ConfiguracionPage /></AdminRoute>} />
           <Route path="chat" element={<ChatPage />} />

@@ -42,7 +42,7 @@ export default function LandingPage() {
           </Link>
         </div>
         <img
-          src="https://drive.google.com/file/d/1ILcDnQ8Wk6Npc0Z0KUw8yOAurbRkrVTg/view?usp=sharing"
+          src="../assets/ilustracion.png"
           alt="Ilustración médica"
           className="w-full max-w-lg rounded-xl shadow-2xl object-cover"
           loading="lazy"
