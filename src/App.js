@@ -14,6 +14,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import AdminRoute from "./components/AdminRoute";
+import ChatbotWidget from "./ChatbotWidget";
 
 export default function App() {
   const { isAuthenticated } = useAuth();
