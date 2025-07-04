@@ -137,8 +137,9 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
   if (error) return <p className="text-red-500 text-center">{error}</p>;
 
   // Buscar nombre para diagnóstico usando cupsOpciones
-  const nombreDiagnostico =
-    cupsOpciones.find((c) => c.value === datos.diagnostico)?.label || "";
+const cupMatch = cupsOpciones.find((c) => c.value === datos.diagnostico);
+const nombreDiagnostico = cupMatch ? cupMatch.label.split(" - ").slice(1).join(" - ") : "";
+
 
   // Mostrar nombres antecedentes desde cupsConNombre (si quieres también concatenar texto libre de antecedentes)
   // Aquí mostramos sólo nombres desde cupsConNombre separados por coma, o vacío si no hay
