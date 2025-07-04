@@ -14,7 +14,7 @@ import {
 } from "react-icons/fi";
 import { FaGithub } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext"; 
+import { useTheme } from "../context/ThemeContext";
 import { toast } from "react-toastify";
 import ChatbotWidget from "./ChatbotWidget";
 
@@ -24,8 +24,6 @@ export default function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
-
-  // Contexto tema
   const { darkMode, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -61,21 +59,16 @@ export default function DashboardLayout() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div
-      className={`${darkMode ? "dark" : ""} flex min-h-screen overflow-hidden bg-gray-100 dark:bg-gray-900`}
-    >
+    <div className={`${darkMode ? "dark" : ""} flex min-h-screen bg-gray-100 dark:bg-gray-900`}>
       {/* Sidebar */}
       <aside
-        className={`bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-width duration-300 ease-in-out fixed md:static z-30 top-0 left-0 h-full ${
-          sidebarOpen ? "w-64" : "w-16"
-        } ${isMobile ? (sidebarOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}`}
-        style={{ transitionProperty: "width, transform" }}
+        className={`fixed top-0 left-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 ease-in-out z-30
+          ${sidebarOpen ? "w-64" : "w-16"}
+          ${isMobile ? (sidebarOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}`}
       >
-        {/* Header sidebar con botón tema a la izquierda del logo */}
+        {/* Header sidebar */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-          {/* Contenedor botón tema + logo */}
           <div className="flex items-center gap-2">
-            {/* Botón toggle tema */}
             <button
               onClick={toggleTheme}
               aria-label="Toggle Theme"
@@ -84,17 +77,11 @@ export default function DashboardLayout() {
               {darkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
             </button>
 
-            {/* Logo (oculto si sidebar cerrado) */}
-            <h1
-              className={`text-xl font-bold text-blue-600 dark:text-blue-400 ${
-                sidebarOpen ? "block" : "hidden"
-              }`}
-            >
+            <h1 className={`text-xl font-bold text-blue-600 dark:text-blue-400 ${sidebarOpen ? "block" : "hidden"}`}>
               Vior Clinic
             </h1>
           </div>
 
-          {/* Botón cerrar sidebar (solo móvil) */}
           <button
             className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 md:hidden"
             onClick={() => setSidebarOpen(false)}
@@ -111,18 +98,18 @@ export default function DashboardLayout() {
                 key={item.name}
                 to={item.path}
                 onClick={() => isMobile && setSidebarOpen(false)}
+                className="block"
               >
                 <li
-                  className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors rounded ${
-                    location.pathname.startsWith(item.path)
-                      ? "bg-blue-200 dark:bg-blue-700 text-blue-800 dark:text-blue-300"
-                      : "hover:bg-blue-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors rounded
+                    ${
+                      location.pathname.startsWith(item.path)
+                        ? "bg-blue-200 dark:bg-blue-700 text-blue-800 dark:text-blue-300"
+                        : "hover:bg-blue-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
+                    }`}
                 >
                   <span className="text-blue-600 dark:text-blue-400">{item.icon}</span>
-                  <span className={`${sidebarOpen ? "inline" : "hidden"} font-medium`}>
-                    {item.name}
-                  </span>
+                  <span className={`${sidebarOpen ? "inline" : "hidden"} font-medium`}>{item.name}</span>
                 </li>
               </Link>
             ))}
@@ -139,12 +126,11 @@ export default function DashboardLayout() {
         aria-hidden="true"
       />
 
-      {/* Contenido principal con footer */}
+      {/* Contenido principal */}
       <div className="flex flex-col flex-1 md:ml-64 min-h-screen">
         {/* Navbar */}
         {isMobile ? (
-          <header className="flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 shadow-sm fixed top-0 left-0 right-0 z-30">
-            {/* Botón abrir sidebar */}
+          <header className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 shadow-sm">
             <button
               className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               onClick={() => setSidebarOpen(true)}
@@ -153,12 +139,8 @@ export default function DashboardLayout() {
               <FiMenu size={24} />
             </button>
 
-            {/* Título centrado */}
-            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-              {getActiveName()}
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">{getActiveName()}</h2>
 
-            {/* Botones Logout y Tema */}
             <div className="flex items-center gap-2 z-10">
               <button
                 onClick={handleLogout}
@@ -166,7 +148,6 @@ export default function DashboardLayout() {
               >
                 Logout
               </button>
-
               <button
                 onClick={toggleTheme}
                 aria-label="Toggle Theme"
@@ -178,12 +159,8 @@ export default function DashboardLayout() {
           </header>
         ) : (
           <header className="flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 shadow-sm">
-            {/* Título izquierda */}
-            <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300">
-              {getActiveName()}
-            </h2>
+            <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300">{getActiveName()}</h2>
 
-            {/* Botones Logout y Tema */}
             <div className="flex items-center gap-2 z-10">
               <button
                 onClick={handleLogout}
@@ -191,7 +168,6 @@ export default function DashboardLayout() {
               >
                 Logout
               </button>
-
               <button
                 onClick={toggleTheme}
                 aria-label="Toggle Theme"
@@ -203,13 +179,13 @@ export default function DashboardLayout() {
           </header>
         )}
 
-        {/* Contenido dinámico */}
+        {/* Contenido */}
         <main className={`flex-grow w-full overflow-auto p-6 ${isMobile ? "pt-20" : ""}`}>
           <Outlet />
         </main>
 
         {/* Footer */}
-        <footer className="bg-white dark:bg-gray-800 text-center py-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300">
+        <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 text-center text-sm text-gray-600 dark:text-gray-300">
           <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
             <span>© {currentYear} — Desarrollado por</span>
             <a
@@ -225,10 +201,11 @@ export default function DashboardLayout() {
         </footer>
       </div>
 
-      {/* Agrega aquí el ChatbotWidget para que esté flotante */}
+      {/* Chatbot widget */}
       <ChatbotWidget />
 
-      <style jsx="true" global="true">{`
+      {/* Scrollbar hide styles */}
+      <style jsx global>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }
