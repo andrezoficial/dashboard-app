@@ -62,9 +62,13 @@ export default function DashboardLayout() {
     <div className={`${darkMode ? "dark" : ""} flex min-h-screen bg-gray-100 dark:bg-gray-900`}>
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 ease-in-out z-30
+        className={`
+          fixed top-0 left-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
+          flex flex-col transition-all duration-300 ease-in-out z-30
           ${sidebarOpen ? "w-64" : "w-16"}
-          ${isMobile ? (sidebarOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}`}
+          ${isMobile ? (sidebarOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}
+        `}
+        style={{ transitionProperty: "width, transform" }}
       >
         {/* Header sidebar */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
@@ -82,37 +86,82 @@ export default function DashboardLayout() {
             </h1>
           </div>
 
-          <button
-            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 md:hidden"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Cerrar sidebar"
-          >
-            <FiChevronLeft size={20} />
-          </button>
+          {/* Botón cerrar sidebar solo en móvil */}
+          {isMobile && sidebarOpen && (
+            <button
+              className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Cerrar sidebar"
+            >
+              <FiChevronLeft size={20} />
+            </button>
+          )}
+
+          {/* Botón toggle sidebar en desktop */}
+          {!isMobile && (
+            <button
+              className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              aria-label={sidebarOpen ? "Cerrar sidebar" : "Abrir sidebar"}
+            >
+              {sidebarOpen ? <FiChevronLeft size={20} /> : <FiMenu size={20} />}
+            </button>
+          )}
         </div>
 
+        {/* Menú */}
         <nav className="flex-1 overflow-y-auto mt-4 scrollbar-hide">
           <ul>
-            {menuItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.path}
-                onClick={() => isMobile && setSidebarOpen(false)}
-                className="block"
-              >
-                <li
-                  className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors rounded
-                    ${
-                      location.pathname.startsWith(item.path)
-                        ? "bg-blue-200 dark:bg-blue-700 text-blue-800 dark:text-blue-300"
-                        : "hover:bg-blue-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
-                    }`}
+            {menuItems.map((item) => {
+              const isActive = location.pathname.startsWith(item.path);
+
+              return (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  onClick={() => isMobile && setSidebarOpen(false)}
+                  className="group relative block"
                 >
-                  <span className="text-blue-600 dark:text-blue-400">{item.icon}</span>
-                  <span className={`${sidebarOpen ? "inline" : "hidden"} font-medium`}>{item.name}</span>
-                </li>
-              </Link>
-            ))}
+                  <li
+                    className={`
+                      flex items-center gap-4 px-4 py-3 cursor-pointer transition-colors rounded-lg
+                      ${
+                        isActive
+                          ? "bg-blue-100 dark:bg-blue-700 text-blue-700 dark:text-white shadow-md"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700"
+                      }
+                    `}
+                  >
+                    <span
+                      className={`
+                        flex items-center justify-center w-10 h-10 rounded-full
+                        ${
+                          isActive
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 group-hover:bg-blue-500 group-hover:text-white"
+                        }
+                        transition-colors duration-300 ease-in-out
+                      `}
+                    >
+                      {item.icon}
+                    </span>
+                    <span className={`${sidebarOpen ? "inline" : "hidden"} font-semibold text-base`}>
+                      {item.name}
+                    </span>
+                  </li>
+
+                  {/* Tooltip si sidebar cerrado */}
+                  {!sidebarOpen && (
+                    <span
+                      className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 rounded bg-gray-900 text-white text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300"
+                      style={{ zIndex: 1000 }}
+                    >
+                      {item.name}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
           </ul>
         </nav>
       </aside>
@@ -127,7 +176,7 @@ export default function DashboardLayout() {
       />
 
       {/* Contenido principal */}
-      <div className="flex flex-col flex-1 md:ml-64 min-h-screen">
+      <div className={`flex flex-col flex-1 min-h-screen transition-all duration-300 ease-in-out ${sidebarOpen ? "md:ml-64" : "md:ml-16"}`}>
         {/* Navbar */}
         {isMobile ? (
           <header className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 shadow-sm">
