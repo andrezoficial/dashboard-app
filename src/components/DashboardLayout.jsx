@@ -48,7 +48,6 @@ export default function DashboardLayout() {
     { name: "Pacientes", icon: <FiUser size={20} />, path: "/pacientes" },
     { name: "Citas", icon: <FiCalendar size={20} />, path: "/citas" },
     { name: "Configuración", icon: <FiSettings size={20} />, path: "/configuracion" },
-    { name: "Chat Bot", icon: <FiMessageSquare size={20} />, path: "/chat" },
   ];
 
   const getActiveName = () => {
