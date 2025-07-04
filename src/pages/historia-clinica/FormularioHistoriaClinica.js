@@ -193,20 +193,24 @@ const nombreDiagnostico = cupMatch ? cupMatch.label.split(" - ").slice(1).join("
         >
           Diagnóstico
         </label>
-        <input
-          id="diagnostico"
-          name="diagnostico"
-          placeholder="Código diagnóstico"
-          value={datos.diagnostico}
-          onChange={handleChange}
-          className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-          required
-        />
-        {nombreDiagnostico && (
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-            {nombreDiagnostico}
-          </p>
-        )}
+        <div>
+  <label className="block mb-1 font-medium text-gray-700 dark:text-white">
+    Diagnóstico (buscar por nombre)
+  </label>
+  <Select
+    options={cupsOpciones}
+    value={cupsOpciones.find((opt) => opt.value === datos.diagnostico) || null}
+    onChange={(selected) => {
+      setDatos((prev) => ({
+        ...prev,
+        diagnostico: selected ? selected.value : "",
+      }));
+    }}
+    placeholder="Buscar diagnóstico..."
+    isClearable
+    className="text-black"
+  />
+</div>
       </div>
 
       {/* Tratamiento */}
