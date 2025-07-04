@@ -9,11 +9,14 @@ export default function AdminRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.rol !== "Administrador") {
+  if (!user || user.rol !== "Administrador") {
     return (
       <div className="p-6 text-red-500">
         Acceso denegado: necesitas permisos de administrador.
       </div>
+      // O podrías hacer:
+      // <Navigate to="/dashboard" replace />
+      // para enviar a otra página.
     );
   }
 
