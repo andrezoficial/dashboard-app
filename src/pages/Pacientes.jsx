@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, ToastContainer } from "react-toastify";
+import { Link } from "react-router-dom";  // <-- Import agregado
 import "react-toastify/dist/ReactToastify.css";
 
 const API_BASE_URL = "https://backend-dashboard-v2.onrender.com/api";
@@ -226,6 +227,9 @@ export default function Pacientes() {
                 <button onClick={() => handleDelete(p._id)} className="text-red-600 hover:underline">
                   Eliminar
                 </button>
+                <Link to={`/pacientes/${p._id}/historia-clinica`} className="text-green-600 hover:underline">
+                  Historia Clínica
+                </Link>
               </div>
             </motion.div>
           ))
@@ -275,6 +279,9 @@ export default function Pacientes() {
                   <button onClick={() => handleDelete(p._id)} className="text-red-600 hover:underline">
                     Eliminar
                   </button>
+                  <Link to={`/pacientes/${p._id}/historia-clinica`} className="text-green-600 hover:underline">
+                    Historia Clínica
+                  </Link>
                 </td>
               </motion.tr>
             ))}
