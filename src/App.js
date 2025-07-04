@@ -34,19 +34,21 @@ export default function App() {
       <ToastContainer position="top-right" autoClose={3000} />
 
       <Routes>
-        {/* Landing pública */}
+        {/* Página pública */}
         <Route path="/" element={<LandingPage />} />
 
         {/* Login */}
         <Route
           path="/login"
-          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
+          element={
+            isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />
+          }
         />
 
-        {/* Recuperación de contraseña */}
+        {/* Recuperar contraseña */}
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-        {/* Dashboard con rutas privadas */}
+        {/* Área privada */}
         <Route
           path="/dashboard"
           element={

@@ -227,7 +227,8 @@ export default function Pacientes() {
                 <button onClick={() => handleDelete(p._id)} className="text-red-600 hover:underline">
                   Eliminar
                 </button>
-                <Link to={`/pacientes/${p._id}/historia-clinica`} className="text-green-600 hover:underline">
+                {/* Aquí se corrige la ruta agregando /dashboard */}
+                <Link to={`/dashboard/pacientes/${p._id}/historia-clinica`} className="text-green-600 hover:underline">
                   Historia Clínica
                 </Link>
               </div>
@@ -279,7 +280,8 @@ export default function Pacientes() {
                   <button onClick={() => handleDelete(p._id)} className="text-red-600 hover:underline">
                     Eliminar
                   </button>
-                  <Link to={`/pacientes/${p._id}/historia-clinica`} className="text-green-600 hover:underline">
+                  {/* Aquí también corregimos la ruta agregando /dashboard */}
+                  <Link to={`/dashboard/pacientes/${p._id}/historia-clinica`} className="text-green-600 hover:underline">
                     Historia Clínica
                   </Link>
                 </td>
