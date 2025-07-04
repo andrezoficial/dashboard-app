@@ -1,12 +1,29 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { useTheme } from "../context/ThemeContext"; 
+import { useTheme } from "../context/ThemeContext";
+
+import { Calendar, dateFnsLocalizer } from "react-big-calendar";
+import { format, parse, startOfWeek, getDay } from "date-fns";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import { es } from "date-fns/locale";
+
+const locales = {
+  es: es,
+};
+
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+});
 
 const API_URL = "https://backend-dashboard-v2.onrender.com/api";
 
 export default function Citas() {
-  const { darkMode } = useTheme(); // Obtiene el modo oscuro del contexto
+  const { darkMode } = useTheme();
 
   const [citas, setCitas] = useState([]);
   const [pacientes, setPacientes] = useState([]);
@@ -14,8 +31,6 @@ export default function Citas() {
     paciente: "",
     fecha: "",
     motivo: "",
-    notificarWhatsApp: true,
-    notificarSMS: true,
   });
   const [editId, setEditId] = useState(null);
   const [filtro, setFiltro] = useState("");
@@ -44,11 +59,7 @@ export default function Citas() {
   };
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
@@ -56,18 +67,12 @@ export default function Citas() {
     try {
       if (editId) {
         await axios.put(`${API_URL}/citas/${editId}`, form);
-        alert("Cita actualizada");
+        toast.success("Cita actualizada");
       } else {
         await axios.post(`${API_URL}/citas`, form);
         toast.success("Cita registrada y correo enviado al paciente");
       }
-      setForm({
-        paciente: "",
-        fecha: "",
-        motivo: "",
-        notificarWhatsApp: true,
-        notificarSMS: true,
-      });
+      setForm({ paciente: "", fecha: "", motivo: "" });
       setEditId(null);
       fetchCitas();
     } catch {
@@ -88,18 +93,21 @@ export default function Citas() {
       paciente: pacienteId,
       fecha: cita.fecha ? cita.fecha.split("T")[0] : "",
       motivo: cita.motivo || "",
-      notificarWhatsApp: true,
-      notificarSMS: true,
     });
     setEditId(cita._id);
+    window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll al formulario al editar
   };
 
   const handleDelete = async (id) => {
     if (window.confirm("¿Eliminar esta cita?")) {
       try {
         await axios.delete(`${API_URL}/citas/${id}`);
-        alert("Cita eliminada");
+        toast.info("Cita eliminada");
         fetchCitas();
+        if (editId === id) {
+          setEditId(null);
+          setForm({ paciente: "", fecha: "", motivo: "" });
+        }
       } catch {
         alert("Error eliminando cita");
       }
@@ -111,6 +119,14 @@ export default function Citas() {
     const fecha = cita.fecha || "";
     return nombre.includes(filtro.toLowerCase()) || fecha.includes(filtro);
   });
+
+  // Mapeo para react-big-calendar
+  const eventosCalendario = citas.map((cita) => ({
+    id: cita._id,
+    title: `${cita.paciente?.nombreCompleto || "Paciente"} - ${cita.motivo}`,
+    start: new Date(cita.fecha),
+    end: new Date(new Date(cita.fecha).getTime() + 60 * 60 * 1000), // +1 hora
+  }));
 
   // Clases condicionales para modo oscuro/claro:
   const containerClasses = `max-w-4xl mx-auto p-4 ${
@@ -145,10 +161,19 @@ export default function Citas() {
 
   const buttonCancelClasses = `ml-2 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600`;
 
+  // Cuando se hace click en un evento del calendario:
+  const onSelectEvent = (event) => {
+    const citaSeleccionada = citas.find((c) => c._id === event.id);
+    if (citaSeleccionada) {
+      handleEdit(citaSeleccionada);
+    }
+  };
+
   return (
     <div className={containerClasses}>
       <h1 className="text-2xl font-bold mb-4">Gestión de Citas Médicas</h1>
 
+      {/* FILTRO */}
       <input
         type="text"
         placeholder="Filtrar por paciente o fecha"
@@ -157,6 +182,30 @@ export default function Citas() {
         className={inputClasses + " mb-4"}
       />
 
+      {/* CALENDARIO */}
+      <div style={{ height: 500, marginBottom: 20 }}>
+        <Calendar
+          localizer={localizer}
+          events={eventosCalendario}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: 500 }}
+          messages={{
+            next: "Sig.",
+            previous: "Ant.",
+            today: "Hoy",
+            month: "Mes",
+            week: "Semana",
+            day: "Día",
+            agenda: "Agenda",
+            noEventsInRange: "No hay eventos en este rango.",
+          }}
+          onSelectEvent={onSelectEvent}
+          popup={true}
+        />
+      </div>
+
+      {/* TABLA */}
       <table
         className="w-full border-collapse border mb-6"
         style={{ borderColor: darkMode ? "#374151" : "#D1D5DB" }}
@@ -208,6 +257,7 @@ export default function Citas() {
         </tbody>
       </table>
 
+      {/* FORMULARIO */}
       <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
         <h2 className="text-xl font-semibold">
           {editId ? "Editar Cita" : "Nueva Cita"}
@@ -247,31 +297,6 @@ export default function Citas() {
           className={inputClasses}
         />
 
-        {/* Checkboxes para notificaciones */}
-        <div className="flex items-center space-x-4">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              name="notificarWhatsApp"
-              checked={form.notificarWhatsApp}
-              onChange={handleChange}
-              className="form-checkbox"
-            />
-            <span>Enviar notificación por WhatsApp</span>
-          </label>
-
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              name="notificarSMS"
-              checked={form.notificarSMS}
-              onChange={handleChange}
-              className="form-checkbox"
-            />
-            <span>Enviar notificación por SMS</span>
-          </label>
-        </div>
-
         <button type="submit" className={buttonSubmitClasses}>
           {editId ? "Actualizar" : "Crear"}
         </button>
@@ -281,13 +306,7 @@ export default function Citas() {
             type="button"
             onClick={() => {
               setEditId(null);
-              setForm({
-                paciente: "",
-                fecha: "",
-                motivo: "",
-                notificarWhatsApp: true,
-                notificarSMS: true,
-              });
+              setForm({ paciente: "", fecha: "", motivo: "" });
             }}
             className={buttonCancelClasses}
           >
