@@ -13,41 +13,51 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     diagnostico: "",
     tratamiento: "",
     recomendaciones: "",
-    procedimiento: null,
+    cups: [],  // Aquí guardamos los códigos seleccionados
   });
+  const [cupsDisponibles, setCupsDisponibles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Cargar historia clínica y lista de CUPS
   useEffect(() => {
     if (!pacienteId) return;
     const token = localStorage.getItem("token");
 
-    async function fetchHistoria() {
+    async function fetchData() {
       try {
-        const res = await axios.get(
-          `${API_BASE_URL}/pacientes/${pacienteId}/historia`,
-          {
+        const [historiaRes, cupsRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/pacientes/${pacienteId}/historia`, {
             headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+          }),
+          axios.get(`${API_BASE_URL}/cups`),
+        ]);
 
-        if (res.data) {
-          setDatos((prev) => ({ ...prev, ...res.data }));
+        if (historiaRes.data) {
+          setDatos((prev) => ({ ...prev, ...historiaRes.data }));
         }
+        setCupsDisponibles(cupsRes.data);
       } catch (err) {
-        console.error("Error cargando historia clínica:", err);
-        setError("No se pudo cargar la historia clínica");
+        console.error("Error cargando datos:", err);
+        setError("No se pudo cargar la historia clínica o CUPS");
       } finally {
         setLoading(false);
       }
     }
 
-    fetchHistoria();
+    fetchData();
   }, [pacienteId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setDatos((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Manejar selección múltiple de CUPS
+  const handleCupsChange = (e) => {
+    const opciones = Array.from(e.target.selectedOptions);
+    const valores = opciones.map((opt) => opt.value);
+    setDatos((prev) => ({ ...prev, cups: valores }));
   };
 
   const handleSubmit = async (e) => {
@@ -63,25 +73,37 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
         }
       );
       if (onGuardar) onGuardar(datos);
+      alert("Historia clínica guardada correctamente");
     } catch (error) {
       console.error("Error guardando historia clínica:", error);
       alert("Error al guardar la historia clínica");
     }
   };
 
-  if (loading) return <p className="text-center">Cargando...</p>;
-  if (error) return <p className="text-center text-red-500">{error}</p>;
+  if (loading) return <p className="text-center py-8">Cargando datos...</p>;
+  if (error) return <p className="text-center text-red-500 py-8">{error}</p>;
+
+  // Para mostrar un placeholder más amigable
+  const placeholderFriendly = (str) =>
+    str.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
 
   return (
     <form
       onSubmit={handleSubmit}
       className="space-y-4 p-4 bg-white rounded shadow-md dark:bg-gray-800"
     >
-      {["motivoConsulta", "antecedentes", "examenFisico", "diagnostico", "tratamiento", "recomendaciones"].map((campo) => (
+      {[
+        "motivoConsulta",
+        "antecedentes",
+        "examenFisico",
+        "diagnostico",
+        "tratamiento",
+        "recomendaciones",
+      ].map((campo) => (
         <textarea
           key={campo}
           name={campo}
-          placeholder={campo.replace(/([A-Z])/g, " $1")}
+          placeholder={placeholderFriendly(campo)}
           value={datos[campo]}
           onChange={handleChange}
           required
@@ -89,6 +111,24 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
           className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
         />
       ))}
+
+      <label htmlFor="cups" className="block font-semibold">
+        Procedimientos (CUPS) - selecciona uno o varios:
+      </label>
+      <select
+        id="cups"
+        multiple
+        value={datos.cups}
+        onChange={handleCupsChange}
+        className="w-full border p-2 rounded dark:bg-gray-700 dark:text-white"
+        size={Math.min(6, cupsDisponibles.length)} // Mostrar hasta 6 filas
+      >
+        {cupsDisponibles.map(({ codigo, descripcion }) => (
+          <option key={codigo} value={codigo}>
+            {codigo} - {descripcion}
+          </option>
+        ))}
+      </select>
 
       <button
         type="submit"
