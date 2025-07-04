@@ -14,6 +14,8 @@ export default function Citas() {
     paciente: "",
     fecha: "",
     motivo: "",
+    notificarWhatsApp: true,
+    notificarSMS: true,
   });
   const [editId, setEditId] = useState(null);
   const [filtro, setFiltro] = useState("");
@@ -42,7 +44,11 @@ export default function Citas() {
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -55,7 +61,13 @@ export default function Citas() {
         await axios.post(`${API_URL}/citas`, form);
         toast.success("Cita registrada y correo enviado al paciente");
       }
-      setForm({ paciente: "", fecha: "", motivo: "" });
+      setForm({
+        paciente: "",
+        fecha: "",
+        motivo: "",
+        notificarWhatsApp: true,
+        notificarSMS: true,
+      });
       setEditId(null);
       fetchCitas();
     } catch {
@@ -76,6 +88,8 @@ export default function Citas() {
       paciente: pacienteId,
       fecha: cita.fecha ? cita.fecha.split("T")[0] : "",
       motivo: cita.motivo || "",
+      notificarWhatsApp: true,
+      notificarSMS: true,
     });
     setEditId(cita._id);
   };
@@ -118,7 +132,9 @@ export default function Citas() {
   }`;
 
   const buttonEditClasses = `px-2 py-1 rounded ${
-    darkMode ? "bg-yellow-500 text-gray-900 hover:bg-yellow-600" : "bg-yellow-400 text-gray-900 hover:bg-yellow-500"
+    darkMode
+      ? "bg-yellow-500 text-gray-900 hover:bg-yellow-600"
+      : "bg-yellow-400 text-gray-900 hover:bg-yellow-500"
   }`;
 
   const buttonDeleteClasses = `px-2 py-1 rounded text-white ${
@@ -141,7 +157,10 @@ export default function Citas() {
         className={inputClasses + " mb-4"}
       />
 
-      <table className="w-full border-collapse border mb-6" style={{ borderColor: darkMode ? "#374151" : "#D1D5DB" }}>
+      <table
+        className="w-full border-collapse border mb-6"
+        style={{ borderColor: darkMode ? "#374151" : "#D1D5DB" }}
+      >
         <thead>
           <tr>
             <th className={tableHeaderClasses}>Paciente</th>
@@ -228,6 +247,31 @@ export default function Citas() {
           className={inputClasses}
         />
 
+        {/* Checkboxes para notificaciones */}
+        <div className="flex items-center space-x-4">
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              name="notificarWhatsApp"
+              checked={form.notificarWhatsApp}
+              onChange={handleChange}
+              className="form-checkbox"
+            />
+            <span>Enviar notificación por WhatsApp</span>
+          </label>
+
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              name="notificarSMS"
+              checked={form.notificarSMS}
+              onChange={handleChange}
+              className="form-checkbox"
+            />
+            <span>Enviar notificación por SMS</span>
+          </label>
+        </div>
+
         <button type="submit" className={buttonSubmitClasses}>
           {editId ? "Actualizar" : "Crear"}
         </button>
@@ -237,7 +281,13 @@ export default function Citas() {
             type="button"
             onClick={() => {
               setEditId(null);
-              setForm({ paciente: "", fecha: "", motivo: "" });
+              setForm({
+                paciente: "",
+                fecha: "",
+                motivo: "",
+                notificarWhatsApp: true,
+                notificarSMS: true,
+              });
             }}
             className={buttonCancelClasses}
           >
