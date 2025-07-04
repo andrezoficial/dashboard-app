@@ -64,8 +64,8 @@ export default function DashboardLayout() {
       <aside
         className={`
           fixed top-0 left-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
-          flex flex-col transition-all duration-300 ease-in-out z-30
-          ${sidebarOpen ? "w-64" : "w-16"}
+          flex flex-col z-30 transition-all duration-300 ease-in-out
+          ${sidebarOpen ? "w-64 shadow-xl" : "w-16 shadow-md"}
           ${isMobile ? (sidebarOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}
         `}
         style={{ transitionProperty: "width, transform" }}
@@ -97,12 +97,17 @@ export default function DashboardLayout() {
             </button>
           )}
 
-          {/* Botón toggle sidebar en desktop */}
+          {/* Botón toggle sidebar en desktop con rotación animada */}
           {!isMobile && (
             <button
-              className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`
+                p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500
+                transform transition-transform duration-300
+                ${sidebarOpen ? "rotate-0" : "rotate-180"}
+              `}
               onClick={() => setSidebarOpen(!sidebarOpen)}
               aria-label={sidebarOpen ? "Cerrar sidebar" : "Abrir sidebar"}
+              title={sidebarOpen ? "Cerrar menú" : "Abrir menú"}
             >
               {sidebarOpen ? <FiChevronLeft size={20} /> : <FiMenu size={20} />}
             </button>
@@ -124,28 +129,32 @@ export default function DashboardLayout() {
                 >
                   <li
                     className={`
-                      flex items-center gap-4 px-4 py-3 cursor-pointer transition-colors rounded-lg
+                      flex items-center gap-4 px-4 py-3 cursor-pointer rounded-lg
+                      transition-colors duration-300 ease-in-out
                       ${
                         isActive
-                          ? "bg-blue-100 dark:bg-blue-700 text-blue-700 dark:text-white shadow-md"
+                          ? "bg-blue-100 dark:bg-blue-700 text-blue-700 dark:text-white shadow-lg"
                           : "text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700"
                       }
+                      hover:shadow-md
                     `}
                   >
                     <span
                       className={`
                         flex items-center justify-center w-10 h-10 rounded-full
+                        transition-colors duration-300 ease-in-out
                         ${
                           isActive
                             ? "bg-blue-600 text-white"
                             : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 group-hover:bg-blue-500 group-hover:text-white"
                         }
-                        transition-colors duration-300 ease-in-out
                       `}
                     >
                       {item.icon}
                     </span>
-                    <span className={`${sidebarOpen ? "inline" : "hidden"} font-semibold text-base`}>
+                    <span
+                      className={`${sidebarOpen ? "inline" : "hidden"} font-semibold text-base select-none`}
+                    >
                       {item.name}
                     </span>
                   </li>
@@ -153,7 +162,14 @@ export default function DashboardLayout() {
                   {/* Tooltip si sidebar cerrado */}
                   {!sidebarOpen && (
                     <span
-                      className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 rounded bg-gray-900 text-white text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300"
+                      className="
+                        absolute left-full top-1/2 -translate-y-1/2 ml-2 px-3 py-1 rounded
+                        bg-gray-900 text-white text-xs whitespace-nowrap
+                        opacity-0 group-hover:opacity-100 pointer-events-none
+                        transition-all duration-300 ease-in-out
+                        translate-x-2 group-hover:translate-x-0
+                        select-none
+                      "
                       style={{ zIndex: 1000 }}
                     >
                       {item.name}
@@ -176,7 +192,10 @@ export default function DashboardLayout() {
       />
 
       {/* Contenido principal */}
-      <div className={`flex flex-col flex-1 min-h-screen transition-all duration-300 ease-in-out ${sidebarOpen ? "md:ml-64" : "md:ml-16"}`}>
+      <div
+        className={`flex flex-col flex-1 min-h-screen transition-all duration-300 ease-in-out
+          ${sidebarOpen ? "md:ml-64" : "md:ml-16"}`}
+      >
         {/* Navbar */}
         {isMobile ? (
           <header className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 shadow-sm">
