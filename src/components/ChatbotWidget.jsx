@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
-export default function ChatbotWidget() {
-  console.log("ChatbotWidget montado");
+export default function chatbotwidget() {
+  
 
   return (
     <div
