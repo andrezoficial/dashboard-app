@@ -1,25 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
 
 export default function ChatbotWidget() {
+  console.log("ChatbotWidget montado");
+
   return (
     <div
       style={{
         position: "fixed",
-        bottom: "20px",
-        right: "20px",
-        width: "200px",
-        height: "100px",
-        backgroundColor: "rgba(255, 0, 0, 0.8)",
-        color: "white",
+        bottom: 20,
+        right: 20,
+        width: 360,
+        height: 420,
+        boxShadow: "0 0 12px rgba(0,0,0,0.3)",
+        borderRadius: 10,
+        backgroundColor: "white",
         zIndex: 9999,
         display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        borderRadius: "8px",
-        fontWeight: "bold",
+        flexDirection: "column",
       }}
     >
-      Widget CHATBOT visible
+      Chatbot Widget Visible
     </div>
   );
 }
