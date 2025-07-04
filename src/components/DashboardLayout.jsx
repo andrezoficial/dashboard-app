@@ -42,18 +42,18 @@ export default function DashboardLayout() {
     navigate("/login", { replace: true });
   };
 
-  const menuItems = [
-    { name: "Inicio", icon: <FiHome size={20} />, path: "/dashboard" },
-    { name: "Usuarios", icon: <FiUsers size={20} />, path: "/usuarios" },
-    { name: "Pacientes", icon: <FiUser size={20} />, path: "/pacientes" },
-    { name: "Citas", icon: <FiCalendar size={20} />, path: "/citas" },
-    { name: "Configuración", icon: <FiSettings size={20} />, path: "/configuracion" },
-  ];
+ const menuItems = [
+  { name: "Inicio", icon: <FiHome size={20} />, path: "/dashboard" },
+  { name: "Usuarios", icon: <FiUsers size={20} />, path: "/dashboard/usuarios" },
+  { name: "Pacientes", icon: <FiUser size={20} />, path: "/dashboard/pacientes" },
+  { name: "Citas", icon: <FiCalendar size={20} />, path: "/dashboard/citas" },
+  { name: "Configuración", icon: <FiSettings size={20} />, path: "/dashboard/configuracion" },
+];
 
-  const getActiveName = () => {
-    const current = menuItems.find((item) => location.pathname.startsWith(item.path));
-    return current ? current.name : "";
-  };
+const getActiveName = () => {
+  const current = menuItems.find((item) => location.pathname.startsWith(item.path));
+  return current ? current.name : "";
+};
 
   const currentYear = new Date().getFullYear();
 
