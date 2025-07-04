@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import logo from "../logo-viorclinic.png";
+import ilustracion from '../ilustracion.png';
 import { FaGithub, FaLinkedin, FaEnvelope } from "react-icons/fa";
 
 export default function LandingPage() {
@@ -42,11 +43,11 @@ export default function LandingPage() {
           </Link>
         </div>
         <img
-          src="../assets/ilustracion.png"
-          alt="Ilustración médica"
-          className="w-full max-w-lg rounded-xl shadow-2xl object-cover"
-          loading="lazy"
-        />
+        src={ilustracion}
+         alt="Ilustración médica"
+            className="w-full max-w-lg rounded-xl shadow-2xl object-cover"
+         loading="lazy"
+          />
       </section>
 
       {/* Beneficios */}
