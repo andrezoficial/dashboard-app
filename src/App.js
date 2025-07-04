@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
 import LoginPage from "./pages/LoginPage";
 import LandingPage from "./pages/LandingPage";
 import DashboardLayout from "./components/DashboardLayout";
@@ -11,8 +17,10 @@ import ConfiguracionPage from "./pages/ConfiguracionPage";
 import ChatPage from "./pages/ChatPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import FormularioHistoriaClinica from "./pages/historia-clinica/FormularioHistoriaClinica";
+
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
 import { useAuth } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import AdminRoute from "./components/AdminRoute";
@@ -48,7 +56,7 @@ export default function App() {
         {/* Recuperar contraseña */}
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-        {/* Área privada */}
+        {/* Área privada con dashboard y rutas protegidas */}
         <Route
           path="/dashboard"
           element={
@@ -58,6 +66,7 @@ export default function App() {
           }
         >
           <Route index element={<DashboardPage />} />
+
           <Route
             path="usuarios"
             element={
@@ -66,16 +75,39 @@ export default function App() {
               </AdminRoute>
             }
           />
+
           <Route path="pacientes" element={<Pacientes />} />
-          <Route path="pacientes/:id/historia-clinica" element={<FormularioHistoriaClinica />} />
-          <Route path="citas" element={<AdminRoute><Citas /></AdminRoute>} />
-          <Route path="configuracion" element={<AdminRoute><ConfiguracionPage /></AdminRoute>} />
+
+          <Route
+            path="pacientes/:id/historia-clinica"
+            element={<FormularioHistoriaClinica />}
+          />
+
+          <Route
+            path="citas"
+            element={
+              <AdminRoute>
+                <Citas />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="configuracion"
+            element={
+              <AdminRoute>
+                <ConfiguracionPage />
+              </AdminRoute>
+            }
+          />
+
           <Route path="chat" element={<ChatPage />} />
         </Route>
 
-        {/* Ruta por defecto */}
+        {/* Ruta fallback: redirige a landing si no existe la ruta */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
 }
+

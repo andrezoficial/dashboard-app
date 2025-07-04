@@ -6,6 +6,7 @@ const API_BASE_URL = "https://backend-dashboard-v2.onrender.com/api";
 
 export default function FormularioHistoriaClinica({ onGuardar }) {
   const { id: pacienteId } = useParams();
+
   const [datos, setDatos] = useState({
     motivoConsulta: "",
     antecedentes: "",
@@ -13,39 +14,53 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     diagnostico: "",
     tratamiento: "",
     recomendaciones: "",
-    cups: [],  // Aquí guardamos los códigos seleccionados
+    cups: [],
   });
-  const [cupsDisponibles, setCupsDisponibles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Cargar historia clínica y lista de CUPS
   useEffect(() => {
     if (!pacienteId) return;
+
     const token = localStorage.getItem("token");
+    if (!token) {
+      setError("No autorizado");
+      setLoading(false);
+      return;
+    }
 
-    async function fetchData() {
+    async function fetchHistoria() {
       try {
-        const [historiaRes, cupsRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/pacientes/${pacienteId}/historia`, {
+        const res = await axios.get(
+          `${API_BASE_URL}/pacientes/${pacienteId}/historia`,
+          {
             headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(`${API_BASE_URL}/cups`),
-        ]);
+          }
+        );
 
-        if (historiaRes.data) {
-          setDatos((prev) => ({ ...prev, ...historiaRes.data }));
+        if (res.data) {
+          setDatos((prev) => ({ ...prev, ...res.data }));
         }
-        setCupsDisponibles(cupsRes.data);
       } catch (err) {
-        console.error("Error cargando datos:", err);
-        setError("No se pudo cargar la historia clínica o CUPS");
+        if (err.response && err.response.status === 404) {
+          setDatos({
+            motivoConsulta: "",
+            antecedentes: "",
+            examenFisico: "",
+            diagnostico: "",
+            tratamiento: "",
+            recomendaciones: "",
+            cups: [],
+          });
+        } else {
+          setError("No se pudo cargar la historia clínica");
+        }
       } finally {
         setLoading(false);
       }
     }
 
-    fetchData();
+    fetchHistoria();
   }, [pacienteId]);
 
   const handleChange = (e) => {
@@ -53,16 +68,13 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     setDatos((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Manejar selección múltiple de CUPS
-  const handleCupsChange = (e) => {
-    const opciones = Array.from(e.target.selectedOptions);
-    const valores = opciones.map((opt) => opt.value);
-    setDatos((prev) => ({ ...prev, cups: valores }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
+    if (!token) {
+      alert("No autorizado");
+      return;
+    }
 
     try {
       await axios.post(
@@ -73,19 +85,15 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
         }
       );
       if (onGuardar) onGuardar(datos);
-      alert("Historia clínica guardada correctamente");
+      alert("Historia clínica guardada con éxito");
     } catch (error) {
       console.error("Error guardando historia clínica:", error);
       alert("Error al guardar la historia clínica");
     }
   };
 
-  if (loading) return <p className="text-center py-8">Cargando datos...</p>;
-  if (error) return <p className="text-center text-red-500 py-8">{error}</p>;
-
-  // Para mostrar un placeholder más amigable
-  const placeholderFriendly = (str) =>
-    str.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
+  if (loading) return <p className="text-center">Cargando...</p>;
+  if (error) return <p className="text-center text-red-500">{error}</p>;
 
   return (
     <form
@@ -93,42 +101,24 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
       className="space-y-4 p-4 bg-white rounded shadow-md dark:bg-gray-800"
     >
       {[
-        "motivoConsulta",
-        "antecedentes",
-        "examenFisico",
-        "diagnostico",
-        "tratamiento",
-        "recomendaciones",
-      ].map((campo) => (
+        { name: "motivoConsulta", label: "Motivo de consulta" },
+        { name: "antecedentes", label: "Antecedentes" },
+        { name: "examenFisico", label: "Examen físico" },
+        { name: "diagnostico", label: "Diagnóstico" },
+        { name: "tratamiento", label: "Tratamiento" },
+        { name: "recomendaciones", label: "Recomendaciones" },
+      ].map(({ name, label }) => (
         <textarea
-          key={campo}
-          name={campo}
-          placeholder={placeholderFriendly(campo)}
-          value={datos[campo]}
+          key={name}
+          name={name}
+          placeholder={label}
+          value={datos[name]}
           onChange={handleChange}
           required
           rows={3}
           className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
         />
       ))}
-
-      <label htmlFor="cups" className="block font-semibold">
-        Procedimientos (CUPS) - selecciona uno o varios:
-      </label>
-      <select
-        id="cups"
-        multiple
-        value={datos.cups}
-        onChange={handleCupsChange}
-        className="w-full border p-2 rounded dark:bg-gray-700 dark:text-white"
-        size={Math.min(6, cupsDisponibles.length)} // Mostrar hasta 6 filas
-      >
-        {cupsDisponibles.map(({ codigo, descripcion }) => (
-          <option key={codigo} value={codigo}>
-            {codigo} - {descripcion}
-          </option>
-        ))}
-      </select>
 
       <button
         type="submit"
