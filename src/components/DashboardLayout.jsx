@@ -43,7 +43,7 @@ export default function DashboardLayout() {
   };
 
   const menuItems = [
-    { name: "Dashboard", icon: <FiHome size={20} />, path: "/dashboard" },
+    { name: "Inicio", icon: <FiHome size={20} />, path: "/dashboard" },
     { name: "Usuarios", icon: <FiUsers size={20} />, path: "/usuarios" },
     { name: "Pacientes", icon: <FiUser size={20} />, path: "/pacientes" },
     { name: "Citas", icon: <FiCalendar size={20} />, path: "/citas" },
