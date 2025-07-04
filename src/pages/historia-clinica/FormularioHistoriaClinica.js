@@ -26,7 +26,7 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🔽 Obtener historia clínica del paciente
+  // 🔽 Obtener historia clínica del paciente y opciones CUPS
   useEffect(() => {
     if (!pacienteId) return;
 
@@ -45,6 +45,7 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (historiaRes.data) {
+          console.log("Historia clínica recibida:", historiaRes.data);
           setDatos((prev) => ({ ...prev, ...historiaRes.data }));
         }
 
@@ -53,10 +54,16 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const opciones = cupsRes.data.map((cup) => ({
-          value: cup.codigo,
-          label: `${cup.codigo} - ${cup.nombre}`,
-        }));
+        console.log("CUPS del backend:", cupsRes.data);
+
+        const opciones = Array.isArray(cupsRes.data)
+          ? cupsRes.data.map((cup) => ({
+              value: cup.codigo,
+              label: `${cup.codigo} - ${cup.nombre}`,
+            }))
+          : [];
+
+        console.log("Opciones CUPS transformadas:", opciones);
 
         setCupsOpciones(opciones);
       } catch (err) {
@@ -91,7 +98,7 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
   const handleCupsChange = (selected) => {
     setDatos((prev) => ({
       ...prev,
-      cups: selected.map((opt) => opt.value),
+      cups: selected ? selected.map((opt) => opt.value) : [],
     }));
   };
 
@@ -181,11 +188,32 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
         <Select
           isMulti
           options={cupsOpciones}
-          value={cupsOpciones.filter((opt) => datos.cups.includes(opt.value))}
+          value={
+            cupsOpciones.length > 0 && Array.isArray(datos.cups)
+              ? cupsOpciones.filter((opt) => datos.cups.includes(opt.value))
+              : []
+          }
           onChange={handleCupsChange}
           className="text-black"
           placeholder="Buscar y seleccionar CUPS..."
         />
+      </div>
+
+      {/* Mostrar CUPS seleccionados en texto */}
+      <div className="mt-2">
+        <h3 className="font-semibold text-gray-700 dark:text-white">CUPS seleccionados:</h3>
+        {datos.cups.length > 0 ? (
+          datos.cups.map((codigo) => {
+            const cup = cupsOpciones.find((opt) => opt.value === codigo);
+            return (
+              <p key={codigo} className="text-gray-800 dark:text-gray-300">
+                {cup ? cup.label : codigo}
+              </p>
+            );
+          })
+        ) : (
+          <p className="italic text-gray-500 dark:text-gray-400">No hay procedimientos seleccionados</p>
+        )}
       </div>
 
       <div className="flex gap-4 mt-6">
