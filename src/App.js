@@ -34,7 +34,7 @@ export default function App() {
       <ToastContainer position="top-right" autoClose={3000} />
 
       <Routes>
-        {/* Landing pública (inicio del sitio) */}
+        {/* Landing pública */}
         <Route path="/" element={<LandingPage />} />
 
         {/* Login */}
@@ -46,7 +46,7 @@ export default function App() {
         {/* Recuperación de contraseña */}
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-        {/* Dashboard privado con layout */}
+        {/* Dashboard con rutas privadas */}
         <Route
           path="/dashboard"
           element={
@@ -65,7 +65,6 @@ export default function App() {
             }
           />
           <Route path="pacientes" element={<Pacientes />} />
-          {/* Ruta historia clínica dentro del dashboard */}
           <Route path="pacientes/:id/historia-clinica" element={<FormularioHistoriaClinica />} />
           <Route path="citas" element={<AdminRoute><Citas /></AdminRoute>} />
           <Route path="configuracion" element={<AdminRoute><ConfiguracionPage /></AdminRoute>} />
