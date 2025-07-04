@@ -24,7 +24,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-800">gestioplus.es</h1>
+      <h1 className="text-2xl font-bold text-gray-800">Vior Clinic</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-6 rounded shadow">
           <h2 className="text-lg font-semibold text-blue-600">Usuarios Activos</h2>
