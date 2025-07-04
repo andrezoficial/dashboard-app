@@ -16,7 +16,7 @@ import { FaGithub } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { toast } from "react-toastify";
-import ChatbotWidget from "./ChatbotWidget";
+import ChatbotWidget from "../components/ChatbotWidget";
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
