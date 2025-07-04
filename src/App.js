@@ -10,7 +10,7 @@ import Citas from "./pages/Citas";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
 import ChatPage from "./pages/ChatPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
-import FormularioHistoriaClinica from "./components/FormularioHistoriaClinica";
+import FormularioHistoriaClinica from "./pages/historia-clinica/FormularioHistoriaClinica";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "./context/AuthContext";
