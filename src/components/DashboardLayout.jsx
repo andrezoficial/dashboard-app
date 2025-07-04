@@ -16,7 +16,7 @@ import { FaGithub } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { toast } from "react-toastify";
-import ChatbotWidget from "./chatbotwidget";
+
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -269,9 +269,7 @@ export default function DashboardLayout() {
         </footer>
       </div>
 
-      {/* Chatbot widget */}
-      <ChatbotWidget />
-
+      
       {/* Scrollbar hide styles */}
       <style jsx global>{`
         .scrollbar-hide::-webkit-scrollbar {
