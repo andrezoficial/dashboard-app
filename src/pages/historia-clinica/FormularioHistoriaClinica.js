@@ -15,18 +15,20 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     motivoConsulta: "",
     antecedentes: "",
     examenFisico: "",
-    diagnostico: "",
+    diagnostico: "", // aquí guardaremos el código CUPS
     tratamiento: "",
     recomendaciones: "",
     cups: [],
-    nombrePaciente: "", // opcional si lo traes
+    nombrePaciente: "",
   });
 
   const [cupsOpciones, setCupsOpciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🔽 Obtener historia clínica del paciente y opciones CUPS
+  // Para mostrar el nombre legible del diagnóstico (basado en el código CUPS)
+  const [diagnosticoNombre, setDiagnosticoNombre] = useState("");
+
   useEffect(() => {
     if (!pacienteId) return;
 
@@ -39,49 +41,64 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
 
     async function fetchData() {
       try {
-        // Historia clínica
+        // 1. Obtener historia clínica
         const historiaRes = await axios.get(
           `${API_BASE_URL}/pacientes/${pacienteId}/historia`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        if (historiaRes.data) {
-          console.log("Historia clínica recibida:", historiaRes.data);
-          setDatos((prev) => ({ ...prev, ...historiaRes.data }));
-        }
 
-        // Opciones de CUPS
+        // 2. Obtener lista completa de CUPS para buscar nombres
         const cupsRes = await axios.get(`${API_BASE_URL}/cups`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
-        console.log("CUPS del backend:", cupsRes.data);
 
         const opciones = Array.isArray(cupsRes.data)
           ? cupsRes.data.map((cup) => ({
               value: cup.codigo,
               label: `${cup.codigo} - ${cup.nombre}`,
+              nombre: cup.nombre,
             }))
           : [];
 
-        console.log("Opciones CUPS transformadas:", opciones);
-
         setCupsOpciones(opciones);
-      } catch (err) {
-        if (err.response?.status === 404) {
-          setDatos((prev) => ({
-            ...prev,
-            motivoConsulta: "",
-            antecedentes: "",
-            examenFisico: "",
-            diagnostico: "",
-            tratamiento: "",
-            recomendaciones: "",
-            cups: [],
-          }));
-        } else {
-          console.error("Error cargando datos:", err);
-          setError("Error al cargar la historia clínica o CUPS");
+
+        if (historiaRes.data) {
+          // Aquí extraemos antecedentes: si tienes historial de diagnósticos previos, 
+          // los puedes concatenar o usar directamente. Supondré que se guardan en "cups" o "diagnostico"
+
+          // Si quieres mostrar todos los diagnósticos previos por nombre, hacemos:
+          const codigosDiagnosticosPrevios = historiaRes.data.cups || [];
+
+          // Buscar nombres en opciones CUPS
+          const nombresDiagnosticos = codigosDiagnosticosPrevios
+            .map((codigo) => {
+              const cup = opciones.find((c) => c.value === codigo);
+              return cup ? cup.nombre : null;
+            })
+            .filter(Boolean);
+
+          const antecedentesTexto =
+            nombresDiagnosticos.length > 0
+              ? nombresDiagnosticos.join(", ")
+              : historiaRes.data.antecedentes || "";
+
+          // Para diagnóstico: si tienes un código guardado, mostrar nombre
+          // Supongo que historiaRes.data.diagnostico guarda el código CUPS
+          const diagCodigo = historiaRes.data.diagnostico;
+          const diagCup = opciones.find((c) => c.value === diagCodigo);
+          const diagNombre = diagCup ? diagCup.nombre : "";
+
+          setDatos({
+            ...historiaRes.data,
+            antecedentes: antecedentesTexto,
+            diagnostico: diagCodigo || "",
+          });
+
+          setDiagnosticoNombre(diagNombre);
         }
+      } catch (err) {
+        console.error("Error cargando datos:", err);
+        setError("Error al cargar la historia clínica o CUPS");
       } finally {
         setLoading(false);
       }
@@ -90,6 +107,17 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     fetchData();
   }, [pacienteId]);
 
+  // Cuando cambia diagnóstico, actualizamos estado y nombre para mostrar
+  const handleDiagnosticoChange = (e) => {
+    const valor = e.target.value;
+    setDatos((prev) => ({ ...prev, diagnostico: valor }));
+
+    // Buscar nombre si coincide código
+    const cup = cupsOpciones.find((c) => c.value === valor);
+    setDiagnosticoNombre(cup ? cup.nombre : "");
+  };
+
+  // Para los otros campos normales
   const handleChange = (e) => {
     const { name, value } = e.target;
     setDatos((prev) => ({ ...prev, [name]: value }));
@@ -160,27 +188,85 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
       ref={formRef}
       className="space-y-4 p-4 bg-white rounded shadow-md dark:bg-gray-800"
     >
-      {[
-        { name: "motivoConsulta", label: "Motivo de consulta" },
-        { name: "antecedentes", label: "Antecedentes" },
-        { name: "examenFisico", label: "Examen físico" },
-        { name: "diagnostico", label: "Diagnóstico" },
-        { name: "tratamiento", label: "Tratamiento" },
-        { name: "recomendaciones", label: "Recomendaciones" },
-      ].map(({ name, label }) => (
-        <textarea
-          key={name}
-          name={name}
-          placeholder={label}
-          value={datos[name]}
-          onChange={handleChange}
-          rows={3}
-          required
+      {/* Motivo consulta */}
+      <textarea
+        name="motivoConsulta"
+        placeholder="Motivo de consulta"
+        value={datos.motivoConsulta}
+        onChange={handleChange}
+        rows={3}
+        required
+        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+      />
+
+      {/* Antecedentes con diagnósticos previos o vacío */}
+      <textarea
+        name="antecedentes"
+        placeholder="Antecedentes"
+        value={datos.antecedentes}
+        onChange={handleChange}
+        rows={3}
+        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+      />
+
+      {/* Examen físico */}
+      <textarea
+        name="examenFisico"
+        placeholder="Examen físico"
+        value={datos.examenFisico}
+        onChange={handleChange}
+        rows={3}
+        required
+        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+      />
+
+      {/* Diagnóstico: código CUPS pero mostramos nombre */}
+      <div>
+        <label
+          htmlFor="diagnostico"
+          className="block text-sm font-medium mb-1 text-gray-700 dark:text-white"
+        >
+          Diagnóstico (código CUPS)
+        </label>
+        <input
+          id="diagnostico"
+          name="diagnostico"
+          type="text"
+          placeholder="Código diagnóstico (ej. A123)"
+          value={datos.diagnostico}
+          onChange={handleDiagnosticoChange}
           className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
         />
-      ))}
+        {diagnosticoNombre && (
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
+            Nombre: {diagnosticoNombre}
+          </p>
+        )}
+      </div>
 
-      {/* Autocompletado de CUPS */}
+      {/* Tratamiento */}
+      <textarea
+        name="tratamiento"
+        placeholder="Tratamiento"
+        value={datos.tratamiento}
+        onChange={handleChange}
+        rows={3}
+        required
+        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+      />
+
+      {/* Recomendaciones */}
+      <textarea
+        name="recomendaciones"
+        placeholder="Recomendaciones"
+        value={datos.recomendaciones}
+        onChange={handleChange}
+        rows={3}
+        required
+        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+      />
+
+      {/* Procedimientos (CUPS) multiselección */}
       <div>
         <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-white">
           Procedimientos (CUPS)
@@ -199,7 +285,6 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
         />
       </div>
 
-      {/* Mostrar CUPS seleccionados en texto */}
       <div className="mt-2">
         <h3 className="font-semibold text-gray-700 dark:text-white">CUPS seleccionados:</h3>
         {datos.cups.length > 0 ? (
@@ -212,7 +297,9 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
             );
           })
         ) : (
-          <p className="italic text-gray-500 dark:text-gray-400">No hay procedimientos seleccionados</p>
+          <p className="italic text-gray-500 dark:text-gray-400">
+            No hay procedimientos seleccionados
+          </p>
         )}
       </div>
 
