@@ -35,45 +35,63 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (!pacienteId) return;
+useEffect(() => {
+  if (!pacienteId) return;
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("No autorizado");
-      setLoading(false);
-      return;
-    }
+  const token = localStorage.getItem("token");
+  if (!token) {
+    setError("No autorizado");
+    setLoading(false);
+    return;
+  }
 
-    async function fetchData() {
-      try {
-        const historiaRes = await axios.get(
-          `${API_BASE_URL}/historiaClinica/${pacienteId}/historia`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (historiaRes.data) {
-          setDatos((prev) => ({ ...prev, ...historiaRes.data }));
-        }
-
-        const cupsRes = await axios.get(`${API_BASE_URL}/cups`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const opciones = Array.isArray(cupsRes.data)
-          ? cupsRes.data
-          : [];
-
-        setCupsOpciones(opciones);
-      } catch (err) {
-        console.error("Error cargando datos:", err);
-        setError("Error al cargar la historia clínica o CUPS");
-      } finally {
+  async function fetchData() {
+    try {
+      // 1) Intentar traer la historia clínica
+      const historiaRes = await axios.get(
+        `${API_BASE_URL}/pacientes/${pacienteId}/historia`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setDatos((prev) => ({ ...prev, ...historiaRes.data }));
+    } catch (err) {
+      if (err.response?.status === 404) {
+        // Si no existe, inicializa con valores vacíos (no es error)
+        setDatos((prev) => ({
+          ...prev,
+          motivoConsulta: "",
+          antecedentes: "",
+          examenFisico: "",
+          diagnostico: "",
+          tratamiento: "",
+          recomendaciones: "",
+          cups: [],
+          cupsConNombre: [],
+        }));
+      } else {
+        console.error("Error cargando historia clínica:", err);
+        setError("Error al cargar la historia clínica");
         setLoading(false);
+        return;
       }
     }
 
-    fetchData();
-  }, [pacienteId]);
+    try {
+      // 2) Traer siempre las opciones de CUPS
+      const cupsRes = await axios.get(`${API_BASE_URL}/cups`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCupsOpciones(cupsRes.data);
+    } catch (err) {
+      console.error("Error cargando CUPS:", err);
+      setError("Error al cargar los CUPS");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchData();
+}, [pacienteId]);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
