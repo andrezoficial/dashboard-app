@@ -19,17 +19,17 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
   const { id: pacienteId } = useParams();
   const formRef = useRef();
 
-  const [datos, setDatos] = useState({
-    motivoConsulta: "",
-    antecedentes: "",
-    examenFisico: "",
-    diagnostico: "",
-    tratamiento: "",
-    recomendaciones: "",
-    cups: [],
-    cupsConNombre: [],
-    nombrePaciente: "",
-  });
+ const [datos, setDatos] = useState({
+  motivoConsulta: "Medicina general", // valor inicial para evitar vacíos
+  antecedentes: "",
+  examenFisico: "",
+  diagnostico: "",
+  tratamiento: "",
+  recomendaciones: "",
+  cups: [],
+  cupsConNombre: [],
+  nombrePaciente: "",
+});
 
   const [cupsOpciones, setCupsOpciones] = useState([]);
   const [loading, setLoading] = useState(true);
