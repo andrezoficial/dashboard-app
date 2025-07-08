@@ -112,7 +112,7 @@ useEffect(() => {
 
     try {
       await axios.post(
-        `${API_BASE_URL}/historiaClinica/${pacienteId}/historia`,
+        `${API_BASE_URL}/pacientes/${pacienteId}/historia`,
         datos,
         { headers: { Authorization: `Bearer ${token}` } }
       );
