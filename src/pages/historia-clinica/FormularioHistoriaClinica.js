@@ -57,6 +57,9 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
         const cupsRes = await axios.get(`${API_BASE_URL}/cups`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("👉 cupsRes.data:", cupsRes.data);
+        
+  
         const opciones = cupsRes.data.map((cup) => ({
           value: cup.codigo,
           label: `${cup.codigo} - ${cup.nombre}`,
@@ -70,7 +73,48 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
       }
     }
     fetchData();
-  }, [pacienteId]);
+  }, [pacienteId]);useEffect(() => {
+  if (!pacienteId) return;
+
+  const token = localStorage.getItem("token");
+  if (!token) {
+    setError("No autorizado");
+    setLoading(false);
+    return;
+  }
+
+  async function fetchData() {
+    try {
+      // ✅ 1. Traer historia clínica (incluye cupsConNombre, etc.)
+      const historiaRes = await axios.get(
+        `${API_BASE_URL}/pacientes/${pacienteId}/historia`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (historiaRes.data) {
+        setDatos((prev) => ({ ...prev, ...historiaRes.data }));
+      }
+
+      // ✅ 2. Traer opciones de CUPS ya formateadas desde el backend
+      const cupsRes = await axios.get(`${API_BASE_URL}/cups`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log("✅ Opciones CUPS recibidas:", cupsRes.data);
+
+      // ⛔ NO necesitas hacer map, porque backend ya manda [{ value, label }]
+      setCupsOpciones(cupsRes.data);
+    } catch (err) {
+      console.error("Error cargando datos:", err);
+      setError("Error al cargar la historia clínica o CUPS");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchData();
+}, [pacienteId]);
+
 
   // Cuando cambia diagnóstico, trae su detalle
   useEffect(() => {
