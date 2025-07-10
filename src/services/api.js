@@ -48,14 +48,16 @@ export const getPacientes = async () => {
   const res = await axios.get(`${API_URL}/pacientes`);
   return res.data;
 };
+// Enviar código de verificación al correo
 export const enviarCodigoVerificacion = async (correo) => {
-  const res = await axios.post(`${API_URL}/citas/enviar-codigo`, { correo });
+  const res = await axios.post(`${API_URL}/verificacion/enviar-codigo`, { correo });
   return res.data;
 };
 
-export const verificarCodigo = async (correo, codigo) => {
-  const res = await axios.post(`${API_URL}/citas/verificar-codigo`, { correo, codigo });
-  return res.data; // { ok: true } o { ok: false }
+// Validar código de verificación
+export const validarCodigoVerificacion = async (correo, codigo) => {
+  const res = await axios.post(`${API_URL}/verificacion/validar-codigo`, { correo, codigo });
+  return res.data;
 };
 
 export const crearCitaDesdeBot = async ({ correo, fecha, motivo }) => {
