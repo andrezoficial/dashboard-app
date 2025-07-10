@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast, ToastContainer } from "react-toastify";
 import { Link } from "react-router-dom";  // <-- Import agregado
 import "react-toastify/dist/ReactToastify.css";
+import GraficoCitas from "../components/GraficoCitas";
 
 const API_BASE_URL = "https://backend-dashboard-v2.onrender.com/api";
 
@@ -112,6 +113,11 @@ export default function Pacientes() {
       <ToastContainer position="top-right" autoClose={3000} />
 
       <h1 className="text-xl sm:text-2xl font-bold mb-4">Pacientes</h1>
+      <GraficoCitas />
+      <div className="mb-6 p-4 border rounded bg-white dark:bg-gray-800 dark:border-gray-700">
+  <h2 className="text-lg font-semibold mb-2 text-center">Estadísticas de citas</h2>
+  <GraficoCitas />
+</div>
 
       <button
         onClick={() => {
