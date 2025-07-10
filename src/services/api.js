@@ -48,3 +48,21 @@ export const getPacientes = async () => {
   const res = await axios.get(`${API_URL}/pacientes`);
   return res.data;
 };
+export const enviarCodigoVerificacion = async (correo) => {
+  const res = await axios.post(`${API_URL}/citas/enviar-codigo`, { correo });
+  return res.data;
+};
+
+export const verificarCodigo = async (correo, codigo) => {
+  const res = await axios.post(`${API_URL}/citas/verificar-codigo`, { correo, codigo });
+  return res.data; // { ok: true } o { ok: false }
+};
+
+export const crearCitaDesdeBot = async ({ correo, fecha, motivo }) => {
+  const res = await axios.post(`${API_URL}/citas/crear-desde-bot`, {
+    correo,
+    fecha,
+    motivo,
+  });
+  return res.data;
+};

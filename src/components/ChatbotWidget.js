@@ -1,83 +1,113 @@
 import React, { useState } from "react";
-
-const respuestasSimuladas = {
-  "hola": "¡Hola! Bienvenido a Vior Clinic. ¿En qué puedo ayudarte hoy?",
-  "horario": "Nuestro horario de atención es de lunes a viernes, 8:00 AM a 6:00 PM.",
-  "dónde están": "Estamos ubicados en la Calle 123 #45-67, Bogotá, Colombia.",
-  "agendar cita": "Para agendar una cita, por favor visita la sección 'Citas' en el menú lateral.",
-  "qué servicios ofrecen": "Ofrecemos consultas médicas generales, especialidades, y atención de urgencias.",
-  "contacto": "Puedes contactarnos al teléfono +57 123 456 7890 o al correo contacto@viorclinic.com.",
-  "gracias": "¡Gracias a ti! Si necesitas algo más, aquí estaré para ayudarte.",
-  "default": "Disculpa, no entendí eso. ¿Podrías reformular tu pregunta o escribir otra cosa?",
-  "hola": "¡Hola! Bienvenido a Vior Clinic, el software que transformará la gestión de tu clínica. ¿En qué puedo ayudarte?",
-  "qué es vior clinic": "Vior Clinic es un software integral para clínicas y consultorios que permite gestionar citas, pacientes y especialistas de forma fácil y segura.",
-  "para qué sirve": "Nuestro software agiliza la gestión administrativa y mejora la experiencia de tus pacientes, con recordatorios automáticos y paneles intuitivos.",
-  "funcionalidades": "Vior Clinic ofrece agenda inteligente, control total de pacientes y citas, historial clínico digital y reportes detallados para la administración.",
-  "por qué elegir vior clinic": "Con Vior Clinic optimizas tiempo, reduces errores y garantizas la privacidad de los datos con encriptación avanzada y cumplimiento normativo.",
-  "cómo agendar cita": "Con nuestro software, tus pacientes pueden reservar citas en línea con especialistas certificados, sin esperas ni llamadas.",
-  "seguridad": "Nuestra plataforma cumple con estrictos protocolos de seguridad y encriptación para proteger toda la información clínica y personal.",
-  "soporte": "Ofrecemos soporte técnico continuo para que tu sistema funcione sin interrupciones y puedas enfocarte en lo que más importa: la salud de tus pacientes.",
-  "precio": "Contamos con planes flexibles adaptados a clínicas pequeñas y grandes. Contáctanos para una cotización personalizada.",
-  "demo": "Puedes solicitar una demo gratuita para conocer todas las ventajas y funcionalidades de Vior Clinic.",
-  "empresa": "Somos un equipo dedicado a mejorar la salud digital en Latinoamérica con tecnología de punta y atención personalizada.",
-  "contacto": "Para más información, escríbenos a contacto@viorclinic.com o llámanos al +57 123 456 7890.",
-  "gracias": "¡Gracias por tu interés en Vior Clinic! Estamos aquí para ayudarte a transformar tu clínica.",
-  "adiós": "¡Que tengas un excelente día! No dudes en volver si quieres saber más sobre Vior Clinic.",
-  "default": "Disculpa, no entendí eso. ¿Quieres que te cuente más sobre cómo Vior Clinic puede ayudar a tu clínica?",
-   "hola": "¡Hola! Bienvenido a Vior Clinic. ¿En qué puedo ayudarte hoy?",
-  "buenos días": "¡Buenos días! ¿Cómo puedo ayudarte hoy?",
-  "buenas tardes": "¡Buenas tardes! ¿En qué puedo asistirte?",
-  "horario": "Nuestro horario de atención es de lunes a viernes, 8:00 AM a 6:00 PM.",
-  "dónde están": "Estamos ubicados en la Calle 123 #45-67, Bogotá, Colombia.",
-  "dirección": "Nuestra dirección es Calle 123 #45-67, Bogotá, Colombia.",
-  "agendar cita": "Para agendar una cita, por favor visita la sección 'Citas' en el menú lateral o llámanos al +57 123 456 7890.",
-  "reservar cita": "Puedes reservar tu cita directamente desde nuestra plataforma o llamarnos al +57 123 456 7890.",
-  "qué servicios ofrecen": "Ofrecemos consultas médicas generales, especialidades, atención de urgencias, y más.",
-  "servicios": "Contamos con especialistas en medicina general, pediatría, ginecología, dermatología, y otros.",
-  "contacto": "Puedes contactarnos al teléfono +57 123 456 7890 o al correo contacto@viorclinic.com.",
-  "teléfono": "Nuestro teléfono de contacto es +57 123 456 7890.",
-  "correo": "Puedes escribirnos a contacto@viorclinic.com para cualquier consulta.",
-  "precio": "Los precios varían según el servicio, para más información contáctanos directamente.",
-  "seguro": "Aceptamos la mayoría de EPS y seguros privados. Consulta con nuestro personal para más detalles.",
-  "emergencia": "En caso de emergencia, por favor dirígete al servicio de urgencias más cercano o llama al 123.",
-  "gracias": "¡Gracias a ti! Si necesitas algo más, aquí estaré para ayudarte.",
-  "adiós": "¡Que tengas un buen día! No dudes en volver si necesitas ayuda.",
-  "default": "Disculpa, no entendí eso. ¿Podrías reformular tu pregunta o escribir otra cosa?",
-};
+import {
+  enviarCodigoVerificacion,
+  verificarCodigo,
+  crearCitaDesdeBot,
+} from "../services/api";
 
 export default function ChatbotWidget() {
   const [visible, setVisible] = useState(true);
   const [input, setInput] = useState("");
   const [mensajes, setMensajes] = useState([
-    { id: 0, texto: "Hola, soy el chatbot de Vior Clinic. ¡Escríbeme algo!" },
+    { id: 0, texto: "Hola, soy el chatbot de Vior Clinic. ¿En qué puedo ayudarte?" },
   ]);
 
-  const enviarMensaje = () => {
+  // Flujo para agendar cita
+  const [estado, setEstado] = useState("inicio");
+  const [correo, setCorreo] = useState("");
+  const [codigo, setCodigo] = useState("");
+  const [fecha, setFecha] = useState("");
+  const [motivo, setMotivo] = useState("");
+
+  const enviarMensaje = async () => {
     if (!input.trim()) return;
     const textoUsuario = input.trim();
     setMensajes((prev) => [...prev, { id: prev.length + 1, texto: textoUsuario, usuario: true }]);
 
-    // Buscar respuesta simulada
-    const clave = textoUsuario.toLowerCase();
-    let respuesta = respuestasSimuladas["default"];
-    for (const pregunta in respuestasSimuladas) {
-      if (clave.includes(pregunta)) {
-        respuesta = respuestasSimuladas[pregunta];
-        break;
-      }
-    }
-
-    setTimeout(() => {
-      setMensajes((prev) => [...prev, { id: prev.length + 1, texto: respuesta }]);
-    }, 800);
-
     setInput("");
+
+    switch (estado) {
+      case "inicio":
+        if (textoUsuario.toLowerCase().includes("agendar")) {
+          setEstado("esperando_correo");
+          agregarRespuesta("Claro, para agendar una cita necesito tu correo electrónico registrado.");
+        } else {
+          agregarRespuesta("Disculpa, no entendí eso. Puedes decir 'Quiero agendar una cita'.");
+        }
+        break;
+
+      case "esperando_correo":
+        try {
+          await enviarCodigoVerificacion(textoUsuario);
+          setCorreo(textoUsuario);
+          setEstado("esperando_codigo");
+          agregarRespuesta("Te envié un código a tu correo. Escríbelo aquí para continuar.");
+        } catch (err) {
+          agregarRespuesta("No encontramos ese correo en nuestros registros. Verifica e intenta de nuevo.");
+        }
+        break;
+
+      case "esperando_codigo":
+        try {
+          const res = await verificarCodigo(correo, textoUsuario);
+          if (res.ok) {
+            setEstado("esperando_fecha");
+            agregarRespuesta("Código verificado. ¿Para qué fecha deseas la cita? (Formato: AAAA-MM-DD)");
+          } else {
+            agregarRespuesta("El código es incorrecto. Inténtalo de nuevo.");
+          }
+        } catch {
+          agregarRespuesta("Hubo un error verificando el código. Intenta de nuevo más tarde.");
+        }
+        break;
+
+      case "esperando_fecha":
+        // Validar fecha mínima hoy
+        const fechaIngresada = new Date(textoUsuario);
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        if (isNaN(fechaIngresada) || fechaIngresada < hoy) {
+          agregarRespuesta("Por favor, ingresa una fecha válida a partir de hoy (AAAA-MM-DD).");
+        } else {
+          setFecha(textoUsuario);
+          setEstado("esperando_motivo");
+          agregarRespuesta("Perfecto. ¿Cuál es el motivo de la cita?");
+        }
+        break;
+
+      case "esperando_motivo":
+        setMotivo(textoUsuario);
+        try {
+          await crearCitaDesdeBot({ correo, fecha, motivo: textoUsuario });
+          agregarRespuesta("¡Tu cita ha sido agendada exitosamente! 🎉 Te llegará un correo de confirmación.");
+          reiniciar();
+        } catch (err) {
+          agregarRespuesta("No se pudo crear la cita. Intenta más tarde.");
+          reiniciar();
+        }
+        break;
+
+      default:
+        agregarRespuesta("Disculpa, no entendí eso. ¿Podrías repetirlo?");
+    }
+  };
+
+  const agregarRespuesta = (texto) => {
+    setTimeout(() => {
+      setMensajes((prev) => [...prev, { id: prev.length + 1, texto }]);
+    }, 800);
+  };
+
+  const reiniciar = () => {
+    setEstado("inicio");
+    setCorreo("");
+    setCodigo("");
+    setFecha("");
+    setMotivo("");
   };
 
   const onKeyDown = (e) => {
-    if (e.key === "Enter") {
-      enviarMensaje();
-    }
+    if (e.key === "Enter") enviarMensaje();
   };
 
   if (!visible) {
