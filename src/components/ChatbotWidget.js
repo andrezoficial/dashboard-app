@@ -1,19 +1,31 @@
 import React, { useState } from "react";
-import { enviarCodigoVerificacion, validarCodigoVerificacion, crearCita } from "../services/api";
+import {
+  enviarCodigoVerificacion,
+  validarCodigoVerificacion,
+  crearCita,
+} from "../services/api";
 
 export default function ChatbotWidget() {
   const [visible, setVisible] = useState(true);
   const [input, setInput] = useState("");
-  const [mensajes, setMensajes] = useState([{ id: 0, texto: "Hola, soy el chatbot de Vior Clinic. ¿Quieres agendar una cita? Por favor escribe tu correo electrónico." }]);
+  const [mensajes, setMensajes] = useState([
+    {
+      id: 0,
+      texto:
+        "Hola, soy el chatbot de Vior Clinic. ¿Quieres agendar una cita? Por favor escribe tu correo electrónico.",
+    },
+  ]);
 
-  // Estados para flujo
   const [paso, setPaso] = useState("esperandoCorreo"); // "esperandoCodigo", "validado"
   const [correo, setCorreo] = useState("");
   const [codigo, setCodigo] = useState("");
   const [pacienteValidado, setPacienteValidado] = useState(null);
 
   const agregarMensaje = (texto, usuario = false) => {
-    setMensajes((prev) => [...prev, { id: prev.length + 1, texto, usuario }]);
+    setMensajes((prev) => [
+      ...prev,
+      { id: prev.length + 1, texto, usuario },
+    ]);
   };
 
   const enviarMensaje = async () => {
@@ -22,46 +34,100 @@ export default function ChatbotWidget() {
     agregarMensaje(textoUsuario, true);
     setInput("");
 
+    const texto = textoUsuario.toLowerCase();
+
+    // 🎯 Detectar saludos antes del flujo principal
+    const saludos = [
+      {
+        palabras: ["hola"],
+        respuesta:
+          "¡Hola! ¿Cómo estás? Por favor, dime tu correo para continuar con la cita.",
+      },
+      {
+        palabras: ["buenos días", "buen dia"],
+        respuesta:
+          "¡Buenos días! ¿Deseas agendar una cita? Por favor, escribe tu correo electrónico.",
+      },
+      {
+        palabras: ["buenas tardes"],
+        respuesta:
+          "¡Buenas tardes! Estoy aquí para ayudarte a agendar tu cita. Escribe tu correo, por favor.",
+      },
+      {
+        palabras: ["buenas noches"],
+        respuesta:
+          "¡Buenas noches! ¿Te gustaría agendar una cita? Por favor, dime tu correo.",
+      },
+       {
+        palabras: ["como estas"],
+        respuesta:
+          "execelente y tu ¿Cómo estás? Por favor, dime tu correo para continuar con la cita.",
+      }, {
+        palabras: ["hi"],
+        respuesta:
+          "¡Hola! ¿Cómo estás? Por favor, dime tu correo para continuar con la cita.",
+      },
+    ];
+
+    const saludoDetectado = saludos.find(({ palabras }) =>
+      palabras.some((palabra) => texto.includes(palabra))
+    );
+
+    if (saludoDetectado) {
+      agregarMensaje(saludoDetectado.respuesta);
+      return;
+    }
+
     try {
       if (paso === "esperandoCorreo") {
-        // Guardar correo e intentar enviar código
         setCorreo(textoUsuario);
         agregarMensaje("Enviando código de verificación a tu correo...");
         await enviarCodigoVerificacion(textoUsuario);
-        agregarMensaje("Código enviado. Por favor, ingresa el código que recibiste en tu correo.");
+        agregarMensaje(
+          "Código enviado. Por favor, ingresa el código que recibiste en tu correo."
+        );
         setPaso("esperandoCodigo");
       } else if (paso === "esperandoCodigo") {
         setCodigo(textoUsuario);
         agregarMensaje("Validando código...");
-        const respuesta = await validarCodigoVerificacion(correo, textoUsuario);
+        const respuesta = await validarCodigoVerificacion(
+          correo,
+          textoUsuario
+        );
         setPacienteValidado(respuesta.paciente);
-        agregarMensaje("¡Código validado! Ahora dime la fecha y hora para agendar tu cita en formato YYYY-MM-DD HH:mm");
+        agregarMensaje(
+          "¡Código validado! Ahora dime la fecha y hora para agendar tu cita en formato YYYY-MM-DD HH:mm"
+        );
         setPaso("validado");
       } else if (paso === "validado") {
-        // Aquí asumes que el textoUsuario es la fecha y hora
         const fechaHora = textoUsuario;
-
-        // Lógica para crear cita
         const citaData = {
           pacienteId: pacienteValidado._id,
-          fechaHora, // idealmente formateado en backend
+          fechaHora,
           estado: "pendiente",
-          // otros campos que requieras
         };
 
         agregarMensaje("Agendando tu cita...");
         await crearCita(citaData);
-        agregarMensaje("¡Cita agendada con éxito! Gracias por usar Vior Clinic.");
+        agregarMensaje(
+          "¡Cita agendada con éxito! Gracias por usar Vior Clinic."
+        );
         setPaso("finalizado");
       } else {
-        agregarMensaje("Lo siento, no entendí eso. Por favor sigue el flujo para agendar una cita.");
+        agregarMensaje(
+          "Lo siento, no entendí eso. Por favor sigue el flujo para agendar una cita."
+        );
       }
     } catch (error) {
       console.error(error);
       if (paso === "esperandoCorreo") {
-        agregarMensaje("No encontramos ese correo en nuestros registros. Verifica e intenta de nuevo.");
+        agregarMensaje(
+          "No encontramos ese correo en nuestros registros. Verifica e intenta de nuevo."
+        );
       } else if (paso === "esperandoCodigo") {
-        agregarMensaje("Código incorrecto o expirado. Por favor, intenta nuevamente o escribe tu correo para reenviar código.");
+        agregarMensaje(
+          "Código incorrecto o expirado. Por favor, intenta nuevamente o escribe tu correo para reenviar código."
+        );
         setPaso("esperandoCorreo");
       } else {
         agregarMensaje("Ocurrió un error. Intenta nuevamente más tarde.");
