@@ -1,9 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import {
   enviarCodigoVerificacion,
   validarCodigoVerificacion,
   crearCita,
+  getMotivos,
+  getHorarios,
+  actualizarCita,
+  eliminarCita,
 } from "../services/api";
+import { format } from "date-fns";
 
 export default function ChatbotWidget() {
   const [visible, setVisible] = useState(true);
@@ -16,10 +23,22 @@ export default function ChatbotWidget() {
     },
   ]);
 
-  const [paso, setPaso] = useState("esperandoCorreo"); // "esperandoCodigo", "validado"
+  // Flujo pasos: esperandoCorreo, esperandoCodigo, mostrarMotivos, seleccionarFecha, seleccionarHorario, confirmacion, finalizado, reprogramar, cancelar
+  const [paso, setPaso] = useState("esperandoCorreo");
+
   const [correo, setCorreo] = useState("");
   const [codigo, setCodigo] = useState("");
   const [pacienteValidado, setPacienteValidado] = useState(null);
+
+  // NUEVO: motivos y selecciones
+  const [motivos, setMotivos] = useState([]);
+  const [motivoSeleccionado, setMotivoSeleccionado] = useState(null);
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
+  const [horariosDisponibles, setHorariosDisponibles] = useState([]);
+  const [horarioSeleccionado, setHorarioSeleccionado] = useState(null);
+
+  // Cita para reprogramar o cancelar (puede venir de backend o flujo)
+  const [citaActual, setCitaActual] = useState(null);
 
   const agregarMensaje = (texto, usuario = false) => {
     setMensajes((prev) => [
@@ -28,6 +47,51 @@ export default function ChatbotWidget() {
     ]);
   };
 
+  // Función para cargar motivos desde backend
+  const cargarMotivos = async () => {
+    try {
+      const datos = await getMotivos();
+      setMotivos(datos);
+      agregarMensaje(
+        "Por favor, elige el motivo de tu cita escribiendo el número:\n" +
+          datos
+            .map((m, i) => `${i + 1}. ${m.label}`)
+            .join("\n")
+      );
+      setPaso("mostrarMotivos");
+    } catch (error) {
+      console.error(error);
+      agregarMensaje("No se pudieron cargar los motivos. Intenta más tarde.");
+    }
+  };
+
+  // Función para cargar horarios según fecha
+  const cargarHorarios = async (fecha) => {
+    try {
+      const fechaISO = format(fecha, "yyyy-MM-dd");
+      const horarios = await getHorarios(fechaISO);
+      setHorariosDisponibles(horarios);
+
+      if (horarios.length === 0) {
+        agregarMensaje(
+          "No hay horarios disponibles para esa fecha. Por favor elige otra fecha."
+        );
+        setPaso("seleccionarFecha");
+      } else {
+        agregarMensaje(
+          "Estos son los horarios disponibles. Escribe el número del horario que prefieres:\n" +
+            horarios.map((h, i) => `${i + 1}. ${h}`).join("\n")
+        );
+        setPaso("seleccionarHorario");
+      }
+    } catch (error) {
+      console.error(error);
+      agregarMensaje("Error al obtener horarios. Intenta más tarde.");
+      setPaso("seleccionarFecha");
+    }
+  };
+
+  // Manejo del envío de mensajes, según paso
   const enviarMensaje = async () => {
     if (!input.trim()) return;
     const textoUsuario = input.trim();
@@ -58,11 +122,12 @@ export default function ChatbotWidget() {
         respuesta:
           "¡Buenas noches! ¿Te gustaría agendar una cita? Por favor, dime tu correo.",
       },
-       {
+      {
         palabras: ["como estas"],
         respuesta:
-          "execelente y tu ¿Cómo estás? Por favor, dime tu correo para continuar con la cita.",
-      }, {
+          "Excelente y tú ¿Cómo estás? Por favor, dime tu correo para continuar con la cita.",
+      },
+      {
         palabras: ["hi"],
         respuesta:
           "¡Hola! ¿Cómo estás? Por favor, dime tu correo para continuar con la cita.",
@@ -95,24 +160,99 @@ export default function ChatbotWidget() {
           textoUsuario
         );
         setPacienteValidado(respuesta.paciente);
+        agregarMensaje("¡Código validado!");
+        // Cargar motivos para siguiente paso
+        await cargarMotivos();
+      } else if (paso === "mostrarMotivos") {
+        // Esperamos un número del 1 al 5 para elegir motivo
+        const index = parseInt(textoUsuario, 10);
+        if (
+          !index ||
+          index < 1 ||
+          index > motivos.length
+        ) {
+          agregarMensaje(
+            "Por favor escribe un número válido del 1 al " + motivos.length
+          );
+          return;
+        }
+        const motivo = motivos[index - 1];
+        setMotivoSeleccionado(motivo);
         agregarMensaje(
-          "¡Código validado! Ahora dime la fecha y hora para agendar tu cita en formato YYYY-MM-DD HH:mm"
+          `Has seleccionado: ${motivo.label}. Ahora elige la fecha para tu cita usando el calendario debajo.`
         );
-        setPaso("validado");
-      } else if (paso === "validado") {
-        const fechaHora = textoUsuario;
-        const citaData = {
-          pacienteId: pacienteValidado._id,
-          fechaHora,
-          estado: "pendiente",
-        };
+        setPaso("seleccionarFecha");
+      } else if (paso === "seleccionarFecha") {
+        agregarMensaje(
+          "Por favor usa el calendario para elegir una fecha, no escribas texto."
+        );
+      } else if (paso === "seleccionarHorario") {
+        // Esperamos un número para elegir horario
+        const index = parseInt(textoUsuario, 10);
+        if (
+          !index ||
+          index < 1 ||
+          index > horariosDisponibles.length
+        ) {
+          agregarMensaje(
+            "Por favor escribe un número válido para elegir un horario."
+          );
+          return;
+        }
+        const horario = horariosDisponibles[index - 1];
+        setHorarioSeleccionado(horario);
+        agregarMensaje(
+          `Has seleccionado el horario ${horario}. Confirmo que agendamos tu cita para el ${format(
+            fechaSeleccionada,
+            "yyyy-MM-dd"
+          )} a las ${horario}. Escribe "sí" para confirmar o "no" para cancelar.`
+        );
+        setPaso("confirmacion");
+      } else if (paso === "confirmacion") {
+        if (texto === "sí" || texto === "si") {
+          // Crear cita
+          const fechaHoraISO = new Date(
+            `${format(fechaSeleccionada, "yyyy-MM-dd")}T${horarioSeleccionado}:00`
+          ).toISOString();
 
-        agregarMensaje("Agendando tu cita...");
-        await crearCita(citaData);
+          const citaData = {
+            pacienteId: pacienteValidado._id,
+            fecha: fechaHoraISO,
+            motivo: motivoSeleccionado.value,
+            estado: "pendiente",
+          };
+
+          agregarMensaje("Agendando tu cita...");
+          await crearCita(citaData);
+          agregarMensaje(
+            "¡Cita agendada con éxito! Gracias por usar Vior Clinic."
+          );
+          setPaso("finalizado");
+        } else if (texto === "no") {
+          agregarMensaje(
+            "Cita cancelada. Si quieres agendar otra cita, escribe tu correo electrónico."
+          );
+          setPaso("esperandoCorreo");
+          // Limpiar estado
+          setMotivoSeleccionado(null);
+          setFechaSeleccionada(null);
+          setHorarioSeleccionado(null);
+          setPacienteValidado(null);
+          setCorreo("");
+        } else {
+          agregarMensaje('Por favor responde "sí" para confirmar o "no" para cancelar.');
+        }
+      } else if (paso === "finalizado") {
         agregarMensaje(
-          "¡Cita agendada con éxito! Gracias por usar Vior Clinic."
+          "Si quieres agendar otra cita, escribe tu correo electrónico."
         );
-        setPaso("finalizado");
+        setPaso("esperandoCorreo");
+        // Limpiar estado
+        setMotivoSeleccionado(null);
+        setFechaSeleccionada(null);
+        setHorarioSeleccionado(null);
+        setPacienteValidado(null);
+        setCorreo("");
       } else {
         agregarMensaje(
           "Lo siento, no entendí eso. Por favor sigue el flujo para agendar una cita."
@@ -141,146 +281,183 @@ export default function ChatbotWidget() {
     }
   };
 
-  if (!visible) {
-    return (
-      <button
-        onClick={() => setVisible(true)}
-        style={{
-          position: "fixed",
-          bottom: 20,
-          right: 20,
-          padding: 12,
-          borderRadius: "50%",
-          backgroundColor: "#2563EB",
-          color: "white",
-          border: "none",
-          cursor: "pointer",
-          boxShadow: "0 0 8px rgba(0,0,0,0.3)",
-          zIndex: 9999,
-        }}
-        aria-label="Abrir Chatbot"
-      >
-        💬
-      </button>
-    );
-  }
+  // --- Renderizado ---
+
+  // Ref para scroll automático al nuevo mensaje
+  const divMensajesRef = useRef(null);
+
+  useEffect(() => {
+    if (divMensajesRef.current) {
+      divMensajesRef.current.scrollTop = divMensajesRef.current.scrollHeight;
+    }
+  }, [mensajes]);
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 20,
-        right: 20,
-        width: 360,
-        height: 420,
-        boxShadow: "0 0 12px rgba(0,0,0,0.3)",
-        borderRadius: 10,
-        backgroundColor: "white",
-        zIndex: 9999,
-        display: "flex",
-        flexDirection: "column",
-      }}
-      aria-live="polite"
-    >
-      <div
-        style={{
-          backgroundColor: "#2563EB",
-          color: "white",
-          padding: "10px 15px",
-          borderTopLeftRadius: 10,
-          borderTopRightRadius: 10,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <strong>Chatbot Vior Clinic</strong>
-        <button
-          onClick={() => setVisible(false)}
-          aria-label="Cerrar Chatbot"
+    <>
+      {visible ? (
+        <div
           style={{
-            background: "transparent",
-            border: "none",
-            color: "white",
-            fontSize: 20,
-            cursor: "pointer",
+            position: "fixed",
+            bottom: 20,
+            right: 20,
+            width: 360,
+            height: 500,
+            boxShadow: "0 0 12px rgba(0,0,0,0.3)",
+            borderRadius: 10,
+            backgroundColor: "white",
+            zIndex: 9999,
+            display: "flex",
+            flexDirection: "column",
           }}
+          aria-live="polite"
         >
-          ×
-        </button>
-      </div>
-
-      <div
-        style={{
-          flexGrow: 1,
-          padding: 10,
-          overflowY: "auto",
-          fontSize: 14,
-        }}
-      >
-        {mensajes.map(({ id, texto, usuario }) => (
           <div
-            key={id}
             style={{
-              marginBottom: 8,
-              textAlign: usuario ? "right" : "left",
+              backgroundColor: "#2563EB",
+              color: "white",
+              padding: "10px 15px",
+              borderTopLeftRadius: 10,
+              borderTopRightRadius: 10,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
-            <div
+            <strong>Chatbot Vior Clinic</strong>
+            <button
+              onClick={() => setVisible(false)}
+              aria-label="Cerrar Chatbot"
               style={{
-                display: "inline-block",
-                padding: "8px 12px",
-                borderRadius: 16,
-                backgroundColor: usuario ? "#2563EB" : "#E5E7EB",
-                color: usuario ? "white" : "black",
-                maxWidth: "80%",
-                wordWrap: "break-word",
+                background: "transparent",
+                border: "none",
+                color: "white",
+                fontSize: 20,
+                cursor: "pointer",
               }}
             >
-              {texto}
-            </div>
+              ×
+            </button>
           </div>
-        ))}
-      </div>
 
-      <div
-        style={{
-          padding: 10,
-          borderTop: "1px solid #ddd",
-          display: "flex",
-          gap: 8,
-        }}
-      >
-        <input
-          type="text"
-          aria-label="Escribe tu mensaje"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          style={{
-            flexGrow: 1,
-            padding: 8,
-            borderRadius: 20,
-            border: "1px solid #ccc",
-            outline: "none",
-          }}
-          placeholder="Escribe tu mensaje..."
-        />
+          <div
+            ref={divMensajesRef}
+            style={{
+              flexGrow: 1,
+              padding: 10,
+              overflowY: "auto",
+              fontSize: 14,
+            }}
+          >
+            {mensajes.map(({ id, texto, usuario }) => (
+              <div
+                key={id}
+                style={{
+                  marginBottom: 8,
+                  textAlign: usuario ? "right" : "left",
+                }}
+              >
+                <div
+                  style={{
+                    display: "inline-block",
+                    padding: "8px 12px",
+                    borderRadius: 16,
+                    backgroundColor: usuario ? "#2563EB" : "#E5E7EB",
+                    color: usuario ? "white" : "black",
+                    maxWidth: "80%",
+                    wordWrap: "break-word",
+                  }}
+                >
+                  {texto}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Mostrar calendario solo cuando toque */}
+          {paso === "seleccionarFecha" && (
+            <div
+              style={{
+                padding: 10,
+                borderTop: "1px solid #ddd",
+                backgroundColor: "#f9f9f9",
+              }}
+            >
+              <DatePicker
+                selected={fechaSeleccionada}
+                onChange={(date) => {
+                  setFechaSeleccionada(date);
+                  cargarHorarios(date);
+                }}
+                minDate={new Date()}
+                placeholderText="Selecciona una fecha"
+                inline
+              />
+            </div>
+          )}
+
+          {/* Input y botón */}
+          <div
+            style={{
+              padding: 10,
+              borderTop: "1px solid #ddd",
+              display: "flex",
+              gap: 8,
+            }}
+          >
+            <input
+              type="text"
+              aria-label="Escribe tu mensaje"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              style={{
+                flexGrow: 1,
+                padding: 8,
+                borderRadius: 20,
+                border: "1px solid #ccc",
+                outline: "none",
+              }}
+              placeholder="Escribe tu mensaje..."
+              disabled={paso === "seleccionarFecha"} // deshabilitado cuando se usa calendario
+            />
+            <button
+              onClick={enviarMensaje}
+              style={{
+                backgroundColor: "#2563EB",
+                color: "white",
+                border: "none",
+                borderRadius: 20,
+                padding: "8px 16px",
+                cursor: "pointer",
+              }}
+              aria-label="Enviar mensaje"
+              disabled={paso === "seleccionarFecha"} // deshabilitado cuando se usa calendario
+            >
+              Enviar
+            </button>
+          </div>
+        </div>
+      ) : (
         <button
-          onClick={enviarMensaje}
+          onClick={() => setVisible(true)}
           style={{
+            position: "fixed",
+            bottom: 20,
+            right: 20,
+            padding: 12,
+            borderRadius: "50%",
             backgroundColor: "#2563EB",
             color: "white",
             border: "none",
-            borderRadius: 20,
-            padding: "8px 16px",
             cursor: "pointer",
+            boxShadow: "0 0 8px rgba(0,0,0,0.3)",
+            zIndex: 9999,
           }}
-          aria-label="Enviar mensaje"
+          aria-label="Abrir Chatbot"
         >
-          Enviar
+          💬
         </button>
-      </div>
-    </div>
+      )}
+    </>
   );
 }

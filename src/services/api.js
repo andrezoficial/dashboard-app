@@ -3,6 +3,18 @@ import axios from 'axios';
 // Backend en Render
 const API_URL = 'https://backend-dashboard-v2.onrender.com/api';
 
+// Obtener motivos de cita (los 5 desde base de datos)
+export const obtenerMotivos = async () => {
+  const res = await axios.get(`${API_URL}/motivos`);
+  return res.data; // debe ser un array [{ value: string, label: string }, ...]
+};
+
+// Obtener horarios disponibles según fecha seleccionada
+export const obtenerHorariosDisponibles = async (fecha) => {
+  const res = await axios.get(`${API_URL}/horarios`, { params: { fecha } });
+  return res.data; // array de strings ["09:00", "10:00", "11:00"]
+};
+
 export const getUsuarios = async () => {
   const res = await axios.get(`${API_URL}/usuarios`);
   return res.data;
@@ -66,5 +78,16 @@ export const crearCitaDesdeBot = async ({ correo, fecha, motivo }) => {
     fecha,
     motivo,
   });
+  return res.data;
+};
+// Traer motivos
+export const getMotivos = async () => {
+  const res = await axios.get(`${API_URL}/motivos`);
+  return res.data;
+};
+
+// Traer horarios disponibles para una fecha YYYY-MM-DD
+export const getHorarios = async (fecha) => {
+  const res = await axios.get(`${API_URL}/horarios`, { params: { fecha } });
   return res.data;
 };
