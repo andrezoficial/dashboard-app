@@ -1,192 +1,184 @@
 import React, { useEffect, useState } from "react";
+import Select from "react-select";
 import axios from "axios";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
+import { useTheme } from "../context/ThemeContext";
 
 const API_URL = "https://backend-dashboard-v2.onrender.com/api";
 
 export default function Citas() {
-  const [citas, setCitas] = useState([]);
+  const { darkMode } = useTheme();
   const [pacientes, setPacientes] = useState([]);
   const [motivos, setMotivos] = useState([]);
-  const [form, setForm] = useState({
-    pacienteId: "",
-    fecha: "",
-    motivo: "",
-  });
+  const [formData, setFormData] = useState({ paciente: "", motivo: "", fecha: "" });
+  const [citas, setCitas] = useState([]);
 
   useEffect(() => {
-    fetchCitas();
     fetchPacientes();
     fetchMotivos();
+    fetchCitas();
   }, []);
+
+  const fetchPacientes = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/pacientes`);
+      const opciones = res.data.map(p => ({
+        value: p._id,
+        label: `${p.nombre} - ${p.documento}`,
+      }));
+      setPacientes(opciones);
+    } catch (error) {
+      toast.error("Error cargando pacientes");
+    }
+  };
+
+  const fetchMotivos = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/citas/motivos`);
+      setMotivos(res.data); // ya vienen con { value, label }
+    } catch (error) {
+      toast.error("Error cargando motivos");
+    }
+  };
 
   const fetchCitas = async () => {
     try {
       const res = await axios.get(`${API_URL}/citas`);
       setCitas(res.data);
     } catch (error) {
-      toast.error("Error al cargar las citas");
-      console.error(error);
+      toast.error("Error cargando citas");
     }
   };
 
-  const fetchPacientes = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/pacientes`);
-      setPacientes(res.data);
-    } catch (error) {
-      toast.error("Error al cargar pacientes");
-      console.error(error);
-    }
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const fetchMotivos = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/motivos`);
-      setMotivos(res.data);
-    } catch (error) {
-      toast.error("No se pudieron cargar los motivos");
-      console.error(error);
-    }
-  };
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/citas`, form);
-      toast.success("Cita guardada correctamente");
-      setForm({ pacienteId: "", fecha: "", motivo: "" });
+      await axios.post(`${API_URL}/citas`, {
+        paciente: formData.paciente.value,
+        motivo: formData.motivo.value,
+        fecha: formData.fecha,
+      });
+      toast.success("Cita guardada");
+      setFormData({ paciente: "", motivo: "", fecha: "" });
       fetchCitas();
     } catch (error) {
-      toast.error("Error al guardar la cita");
-      console.error(error);
+      toast.error("Error al guardar cita");
     }
+  };
+
+  const cancelarCita = async id => {
+    const confirmar = window.confirm("¿Cancelar esta cita?");
+    if (!confirmar) return;
+
+    try {
+      await axios.put(`${API_URL}/citas/${id}/cancelar`);
+      toast.info("Cita cancelada");
+      fetchCitas();
+    } catch (error) {
+      toast.error("Error al cancelar cita");
+    }
+  };
+
+  const customStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      backgroundColor: darkMode ? "#1e1e1e" : "#fff",
+      color: darkMode ? "#fff" : "#000",
+      borderColor: state.isFocused ? "#007bff" : "#ccc",
+      boxShadow: state.isFocused ? "0 0 0 1px #007bff" : null,
+    }),
+    menu: (provided) => ({
+      ...provided,
+      backgroundColor: darkMode ? "#333" : "#fff",
+      color: darkMode ? "#fff" : "#000",
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: darkMode ? "#fff" : "#000",
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: darkMode ? "#aaa" : "#666",
+    }),
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 text-gray-900 dark:text-gray-100">
-      <ToastContainer position="top-right" autoClose={3000} />
-
-      <h2 className="text-2xl font-bold mb-6">Crear Cita</h2>
-
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 bg-white dark:bg-gray-800 p-6 rounded border dark:border-gray-700"
-      >
-        <div>
-          <label htmlFor="pacienteId" className="block font-semibold mb-1">
-            Paciente
-          </label>
-          <select
-            id="pacienteId"
-            name="pacienteId"
-            value={form.pacienteId}
-            onChange={handleChange}
-            required
-            className="w-full border px-3 py-2 rounded bg-white dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
-          >
-            <option value="">Selecciona un paciente</option>
-            {pacientes.map((paciente) => (
-              <option
-                key={paciente._id}
-                value={paciente._id}
-                className="dark:bg-gray-700 dark:text-gray-100"
-              >
-                {paciente.nombreCompleto || paciente.nombre || "Sin nombre"}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="fecha" className="block font-semibold mb-1">
-            Fecha
-          </label>
-          <input
-            id="fecha"
-            type="date"
-            name="fecha"
-            value={form.fecha}
-            onChange={handleChange}
-            required
-            min={new Date().toISOString().split("T")[0]}
-            className="w-full border px-3 py-2 rounded bg-white dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="motivo" className="block font-semibold mb-1">
-            Motivo
-          </label>
-          <select
-            id="motivo"
-            name="motivo"
-            value={form.motivo}
-            onChange={handleChange}
-            required
-            className="w-full border px-3 py-2 rounded bg-white dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
-          >
-            <option value="">Selecciona un motivo</option>
-            {motivos.map((motivo) => (
-              <option
-                key={motivo._id || motivo.value || motivo.label}
-                value={motivo.value || motivo.label}
-                className="dark:bg-gray-700 dark:text-gray-100"
-              >
-                {motivo.label || motivo.value}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="md:col-span-3 flex justify-end items-center">
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
-          >
-            Guardar Cita
-          </button>
-        </div>
+    <div className={`p-4 ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}>
+      <h2 className="text-2xl font-semibold mb-4">Registrar Cita</h2>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Select
+          styles={customStyles}
+          options={pacientes}
+          placeholder="Seleccionar paciente"
+          value={formData.paciente}
+          onChange={val => handleChange("paciente", val)}
+        />
+        <Select
+          styles={customStyles}
+          options={motivos}
+          placeholder="Seleccionar motivo"
+          value={formData.motivo}
+          onChange={val => handleChange("motivo", val)}
+        />
+        <input
+          type="datetime-local"
+          className={`p-2 rounded ${darkMode ? "bg-gray-800 text-white" : "bg-gray-100"}`}
+          value={formData.fecha}
+          onChange={e => handleChange("fecha", e.target.value)}
+        />
+        <button
+          type="submit"
+          className="md:col-span-3 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
+        >
+          Guardar Cita
+        </button>
       </form>
 
-      <h2 className="text-2xl font-bold mb-4">Citas Registradas</h2>
-
-      {citas.length === 0 ? (
-        <p className="text-center text-gray-500 dark:text-gray-400">No hay citas registradas.</p>
-      ) : (
-        <div className="overflow-x-auto rounded border bg-white dark:bg-gray-900 dark:border-gray-700">
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-100 dark:bg-gray-700 text-left text-gray-900 dark:text-gray-100">
-              <tr>
-                <th className="py-2 px-4 border-b dark:border-gray-700">Paciente</th>
-                <th className="py-2 px-4 border-b dark:border-gray-700">Fecha</th>
-                <th className="py-2 px-4 border-b dark:border-gray-700">Motivo</th>
+      <h3 className="text-xl font-semibold mb-2">Citas registradas</h3>
+      <div className="overflow-x-auto">
+        <table className="min-w-full table-auto border border-gray-300 dark:border-gray-700">
+          <thead className={`${darkMode ? "bg-gray-800" : "bg-gray-200"}`}>
+            <tr>
+              <th className="p-2">Paciente</th>
+              <th className="p-2">Motivo</th>
+              <th className="p-2">Fecha</th>
+              <th className="p-2">Estado</th>
+              <th className="p-2">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {citas.map(cita => (
+              <tr key={cita._id} className="text-center border-t dark:border-gray-700">
+                <td className="p-2">{cita.paciente?.nombre}</td>
+                <td className="p-2">{cita.motivo}</td>
+                <td className="p-2">{new Date(cita.fecha).toLocaleString()}</td>
+                <td className="p-2 capitalize">{cita.estado || "pendiente"}</td>
+                <td className="p-2">
+                  {cita.estado !== "cancelada" && (
+                    <button
+                      onClick={() => cancelarCita(cita._id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                    >
+                      Cancelar
+                    </button>
+                  )}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {citas.map((cita) => (
-                <tr
-                  key={cita._id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  <td className="py-2 px-4 border-b dark:border-gray-700">
-                    {cita.paciente?.nombreCompleto || cita.paciente?.nombre || "Desconocido"}
-                  </td>
-                  <td className="py-2 px-4 border-b dark:border-gray-700">
-                    {new Date(cita.fecha).toLocaleDateString()}
-                  </td>
-                  <td className="py-2 px-4 border-b dark:border-gray-700">{cita.motivo}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            ))}
+            {citas.length === 0 && (
+              <tr>
+                <td colSpan={5} className="text-center p-4 text-gray-400">
+                  No hay citas registradas
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
