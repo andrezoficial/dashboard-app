@@ -22,22 +22,24 @@ export default function Citas() {
   const fetchPacientes = async () => {
     try {
       const res = await axios.get(`${API_URL}/pacientes`);
-      const opciones = res.data.map((p) => ({
+      const opciones = res.data.map(p => ({
         value: p._id,
-        label: `${p.nombre} - ${p.documento}`,
+        label: `${p.nombreCompleto} - ${p.numeroDocumento}`,  // aquí el cambio clave
       }));
       setPacientes(opciones);
     } catch (error) {
       toast.error("Error cargando pacientes");
+      console.error(error);
     }
   };
 
   const fetchMotivos = async () => {
     try {
       const res = await axios.get(`${API_URL}/citas/motivos`);
-      setMotivos(res.data); // ya vienen con { value, label }
+      setMotivos(res.data); // vienen con { value, label }
     } catch (error) {
       toast.error("Error cargando motivos");
+      console.error(error);
     }
   };
 
@@ -47,30 +49,36 @@ export default function Citas() {
       setCitas(res.data);
     } catch (error) {
       toast.error("Error cargando citas");
+      console.error(error);
     }
   };
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
+    if (!formData.paciente || !formData.motivo || !formData.fecha) {
+      toast.error("Por favor completa todos los campos");
+      return;
+    }
     try {
       await axios.post(`${API_URL}/citas`, {
-        paciente: formData.paciente?.value,
-        motivo: formData.motivo?.value,
+        paciente: formData.paciente.value,
+        motivo: formData.motivo.value,
         fecha: formData.fecha,
       });
       toast.success("Cita guardada");
-      setFormData({ paciente: null, motivo: null, fecha: "" }); // 🛠 Fix: usar null
+      setFormData({ paciente: null, motivo: null, fecha: "" });
       fetchCitas();
     } catch (error) {
       toast.error("Error al guardar cita");
+      console.error(error);
     }
   };
 
-  const cancelarCita = async (id) => {
+  const cancelarCita = async id => {
     const confirmar = window.confirm("¿Cancelar esta cita?");
     if (!confirmar) return;
 
@@ -80,6 +88,7 @@ export default function Citas() {
       fetchCitas();
     } catch (error) {
       toast.error("Error al cancelar cita");
+      console.error(error);
     }
   };
 
@@ -115,20 +124,20 @@ export default function Citas() {
           options={pacientes}
           placeholder="Seleccionar paciente"
           value={formData.paciente}
-          onChange={(val) => handleChange("paciente", val)}
+          onChange={val => handleChange("paciente", val)}
         />
         <Select
           styles={customStyles}
           options={motivos}
           placeholder="Seleccionar motivo"
           value={formData.motivo}
-          onChange={(val) => handleChange("motivo", val)}
+          onChange={val => handleChange("motivo", val)}
         />
         <input
           type="datetime-local"
           className={`p-2 rounded ${darkMode ? "bg-gray-800 text-white" : "bg-gray-100"}`}
           value={formData.fecha}
-          onChange={(e) => handleChange("fecha", e.target.value)}
+          onChange={e => handleChange("fecha", e.target.value)}
         />
         <button
           type="submit"
@@ -151,9 +160,9 @@ export default function Citas() {
             </tr>
           </thead>
           <tbody>
-            {citas.map((cita) => (
+            {citas.map(cita => (
               <tr key={cita._id} className="text-center border-t dark:border-gray-700">
-                <td className="p-2">{cita.paciente?.nombre}</td>
+                <td className="p-2">{cita.paciente?.nombreCompleto || "Desconocido"}</td>
                 <td className="p-2">{cita.motivo}</td>
                 <td className="p-2">{new Date(cita.fecha).toLocaleString()}</td>
                 <td className="p-2 capitalize">{cita.estado || "pendiente"}</td>
