@@ -8,9 +8,7 @@ import { format, parse, startOfWeek, getDay } from "date-fns";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { es } from "date-fns/locale";
 
-const locales = {
-  es: es,
-};
+const locales = { es };
 
 const localizer = dateFnsLocalizer({
   format,
@@ -34,6 +32,7 @@ export default function Citas() {
   });
   const [editId, setEditId] = useState(null);
   const [filtro, setFiltro] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchCitas();
@@ -44,7 +43,8 @@ export default function Citas() {
     try {
       const res = await axios.get(`${API_URL}/citas`);
       setCitas(res.data);
-    } catch {
+    } catch (error) {
+      console.error("Error cargando citas:", error);
       alert("Error cargando citas");
     }
   };
@@ -53,7 +53,8 @@ export default function Citas() {
     try {
       const res = await axios.get(`${API_URL}/pacientes`);
       setPacientes(res.data);
-    } catch {
+    } catch (error) {
+      console.error("Error cargando pacientes:", error);
       alert("Error cargando pacientes");
     }
   };
@@ -64,6 +65,15 @@ export default function Citas() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const hoy = new Date().setHours(0, 0, 0, 0);
+    const fechaSeleccionada = new Date(form.fecha).setHours(0, 0, 0, 0);
+    if (fechaSeleccionada < hoy) {
+      toast.error("La fecha no puede ser anterior a hoy");
+      return;
+    }
+
+    setLoading(true);
     try {
       if (editId) {
         await axios.put(`${API_URL}/citas/${editId}`, form);
@@ -75,8 +85,11 @@ export default function Citas() {
       setForm({ paciente: "", fecha: "", motivo: "" });
       setEditId(null);
       fetchCitas();
-    } catch {
+    } catch (error) {
+      console.error("Error guardando cita:", error);
       alert("Error guardando cita");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -95,7 +108,7 @@ export default function Citas() {
       motivo: cita.motivo || "",
     });
     setEditId(cita._id);
-    window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll al formulario al editar
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (id) => {
@@ -108,7 +121,8 @@ export default function Citas() {
           setEditId(null);
           setForm({ paciente: "", fecha: "", motivo: "" });
         }
-      } catch {
+      } catch (error) {
+        console.error("Error eliminando cita:", error);
         alert("Error eliminando cita");
       }
     }
@@ -120,15 +134,13 @@ export default function Citas() {
     return nombre.includes(filtro.toLowerCase()) || fecha.includes(filtro);
   });
 
-  // Mapeo para react-big-calendar
   const eventosCalendario = citas.map((cita) => ({
     id: cita._id,
     title: `${cita.paciente?.nombreCompleto || "Paciente"} - ${cita.motivo}`,
     start: new Date(cita.fecha),
-    end: new Date(new Date(cita.fecha).getTime() + 60 * 60 * 1000), // +1 hora
+    end: new Date(new Date(cita.fecha).getTime() + 60 * 60 * 1000),
   }));
 
-  // Clases condicionales para modo oscuro/claro:
   const containerClasses = `max-w-4xl mx-auto p-4 ${
     darkMode ? "bg-gray-900 text-gray-100" : "bg-white text-gray-900"
   }`;
@@ -157,11 +169,10 @@ export default function Citas() {
     darkMode ? "bg-red-600 hover:bg-red-700" : "bg-red-500 hover:bg-red-600"
   }`;
 
-  const buttonSubmitClasses = `bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700`;
+  const buttonSubmitClasses = `bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50`;
 
   const buttonCancelClasses = `ml-2 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600`;
 
-  // Cuando se hace click en un evento del calendario:
   const onSelectEvent = (event) => {
     const citaSeleccionada = citas.find((c) => c._id === event.id);
     if (citaSeleccionada) {
@@ -173,7 +184,6 @@ export default function Citas() {
     <div className={containerClasses}>
       <h1 className="text-2xl font-bold mb-4">Gestión de Citas Médicas</h1>
 
-      {/* FILTRO */}
       <input
         type="text"
         placeholder="Filtrar por paciente o fecha"
@@ -182,7 +192,6 @@ export default function Citas() {
         className={inputClasses + " mb-4"}
       />
 
-      {/* CALENDARIO */}
       <div style={{ height: 500, marginBottom: 20 }}>
         <Calendar
           localizer={localizer}
@@ -205,7 +214,6 @@ export default function Citas() {
         />
       </div>
 
-      {/* TABLA */}
       <table
         className="w-full border-collapse border mb-6"
         style={{ borderColor: darkMode ? "#374151" : "#D1D5DB" }}
@@ -257,7 +265,6 @@ export default function Citas() {
         </tbody>
       </table>
 
-      {/* FORMULARIO */}
       <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
         <h2 className="text-xl font-semibold">
           {editId ? "Editar Cita" : "Nueva Cita"}
@@ -297,7 +304,11 @@ export default function Citas() {
           className={inputClasses}
         />
 
-        <button type="submit" className={buttonSubmitClasses}>
+        <button
+          type="submit"
+          disabled={loading}
+          className={buttonSubmitClasses}
+        >
           {editId ? "Actualizar" : "Crear"}
         </button>
 
