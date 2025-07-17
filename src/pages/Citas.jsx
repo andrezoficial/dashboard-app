@@ -3,15 +3,23 @@ import Select from "react-select";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useTheme } from "../context/ThemeContext";
+import ReactDatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const API_URL = "https://backend-dashboard-v2.onrender.com/api";
 
 export default function Citas() {
   const { darkMode } = useTheme();
+
   const [pacientes, setPacientes] = useState([]);
   const [motivos, setMotivos] = useState([]);
-  const [formData, setFormData] = useState({ paciente: null, motivo: null, fecha: "" });
   const [citas, setCitas] = useState([]);
+
+  const [formData, setFormData] = useState({
+    paciente: null,
+    motivo: null,
+    fecha: null,
+  });
 
   useEffect(() => {
     fetchPacientes();
@@ -22,24 +30,24 @@ export default function Citas() {
   const fetchPacientes = async () => {
     try {
       const res = await axios.get(`${API_URL}/pacientes`);
-      const opciones = res.data.map(p => ({
+      const opciones = res.data.map((p) => ({
         value: p._id,
-        label: `${p.nombreCompleto} - ${p.numeroDocumento}`,  // aquí el cambio clave
+        label: `${p.nombreCompleto} - ${p.numeroDocumento}`,
+        nombreCompleto: p.nombreCompleto,
+        correo: p.correo,
       }));
       setPacientes(opciones);
     } catch (error) {
       toast.error("Error cargando pacientes");
-      console.error(error);
     }
   };
 
   const fetchMotivos = async () => {
     try {
       const res = await axios.get(`${API_URL}/citas/motivos`);
-      setMotivos(res.data); // vienen con { value, label }
+      setMotivos(res.data);
     } catch (error) {
       toast.error("Error cargando motivos");
-      console.error(error);
     }
   };
 
@@ -49,38 +57,38 @@ export default function Citas() {
       setCitas(res.data);
     } catch (error) {
       toast.error("Error cargando citas");
-      console.error(error);
     }
   };
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!formData.paciente || !formData.motivo || !formData.fecha) {
-      toast.error("Por favor completa todos los campos");
+      toast.error("Por favor llena todos los campos");
       return;
     }
+
     try {
       await axios.post(`${API_URL}/citas`, {
         paciente: formData.paciente.value,
         motivo: formData.motivo.value,
-        fecha: formData.fecha,
+        fecha: formData.fecha.toISOString(),
       });
-      toast.success("Cita guardada");
-      setFormData({ paciente: null, motivo: null, fecha: "" });
+      toast.success("Cita guardada correctamente");
+      setFormData({ paciente: null, motivo: null, fecha: null });
       fetchCitas();
     } catch (error) {
-      toast.error("Error al guardar cita");
       console.error(error);
+      toast.error("Error al guardar cita");
     }
   };
 
-  const cancelarCita = async id => {
-    const confirmar = window.confirm("¿Cancelar esta cita?");
-    if (!confirmar) return;
+  const cancelarCita = async (id) => {
+    if (!window.confirm("¿Cancelar esta cita?")) return;
 
     try {
       await axios.put(`${API_URL}/citas/${id}/cancelar`);
@@ -88,7 +96,6 @@ export default function Citas() {
       fetchCitas();
     } catch (error) {
       toast.error("Error al cancelar cita");
-      console.error(error);
     }
   };
 
@@ -118,27 +125,34 @@ export default function Citas() {
   return (
     <div className={`p-4 ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}>
       <h2 className="text-2xl font-semibold mb-4">Registrar Cita</h2>
+
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Select
           styles={customStyles}
           options={pacientes}
           placeholder="Seleccionar paciente"
           value={formData.paciente}
-          onChange={val => handleChange("paciente", val)}
+          onChange={(val) => handleChange("paciente", val)}
         />
         <Select
           styles={customStyles}
           options={motivos}
           placeholder="Seleccionar motivo"
           value={formData.motivo}
-          onChange={val => handleChange("motivo", val)}
+          onChange={(val) => handleChange("motivo", val)}
         />
-        <input
-          type="datetime-local"
+        <ReactDatePicker
+          selected={formData.fecha}
+          onChange={(date) => handleChange("fecha", date)}
+          showTimeSelect
+          timeFormat="HH:mm"
+          timeIntervals={15}
+          dateFormat="dd/MM/yyyy HH:mm"
+          minDate={new Date()}
+          placeholderText="Seleccionar fecha y hora"
           className={`p-2 rounded ${darkMode ? "bg-gray-800 text-white" : "bg-gray-100"}`}
-          value={formData.fecha}
-          onChange={e => handleChange("fecha", e.target.value)}
         />
+
         <button
           type="submit"
           className="md:col-span-3 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
@@ -148,6 +162,7 @@ export default function Citas() {
       </form>
 
       <h3 className="text-xl font-semibold mb-2">Citas registradas</h3>
+
       <div className="overflow-x-auto">
         <table className="min-w-full table-auto border border-gray-300 dark:border-gray-700">
           <thead className={`${darkMode ? "bg-gray-800" : "bg-gray-200"}`}>
@@ -160,7 +175,14 @@ export default function Citas() {
             </tr>
           </thead>
           <tbody>
-            {citas.map(cita => (
+            {citas.length === 0 && (
+              <tr>
+                <td colSpan={5} className="text-center p-4 text-gray-400">
+                  No hay citas registradas
+                </td>
+              </tr>
+            )}
+            {citas.map((cita) => (
               <tr key={cita._id} className="text-center border-t dark:border-gray-700">
                 <td className="p-2">{cita.paciente?.nombreCompleto || "Desconocido"}</td>
                 <td className="p-2">{cita.motivo}</td>
@@ -178,13 +200,6 @@ export default function Citas() {
                 </td>
               </tr>
             ))}
-            {citas.length === 0 && (
-              <tr>
-                <td colSpan={5} className="text-center p-4 text-gray-400">
-                  No hay citas registradas
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
