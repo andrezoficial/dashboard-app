@@ -44,7 +44,7 @@ export default function Citas() {
 
   const fetchMotivos = async () => {
     try {
-      const res = await axios.get(`${API_URL}/citas/motivos`);
+      const res = await axios.get(`${API_URL}/motivos`);
       setMotivos(res.data);
     } catch (error) {
       toast.error("Error cargando motivos");
