@@ -154,23 +154,26 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
   };
 
   const cargarDiagnosticos = async (inputValue) => {
-    if (!inputValue || inputValue.length < 3) return [];
+  if (!inputValue || inputValue.length < 3) return [];
 
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`${API_BASE_URL}/icd11/buscar`, {
+  try {
+    const token = localStorage.getItem('token');
+    const { data } = await axios.get(
+      `${API_BASE_URL}/icd11/buscar`,    // API propia de tu backend
+      {
         params: { termino: inputValue },
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      return response.data.map((item) => ({
-        value: item.code,
-        label: `${item.code} - ${item.label}`,
-      }));
-    } catch (error) {
-      return [];
-    }
-  };
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    return data.map(item => ({
+      value: item.code,
+      label: `${item.code} - ${item.title}`
+    }));
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+};
 
   if (loading) return <p className="text-center">Cargando...</p>;
   if (error) return <p className="text-red-500 text-center">{error}</p>;
