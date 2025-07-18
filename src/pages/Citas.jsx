@@ -43,18 +43,17 @@ export default function Citas() {
   };
 
   const fetchMotivos = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/motivos`);
-      // Aquí convertimos strings simples a objetos con value y label para react-select
-      const opciones = res.data.map(m => ({
-        value: m.toLowerCase(),
-        label: m
-      }));
-      setMotivos(opciones);
-    } catch (error) {
-      toast.error("Error cargando motivos");
-    }
-  };
+  try {
+    const res = await axios.get(`${API_URL}/citas/motivos`);
+    const opciones = res.data.map((m) => ({
+      value: m.toLowerCase(),
+      label: m.charAt(0).toUpperCase() + m.slice(1),
+    }));
+    setMotivos(opciones);
+  } catch (error) {
+    toast.error("Error cargando motivos");
+  }
+};
 
   const fetchCitas = async () => {
     try {
