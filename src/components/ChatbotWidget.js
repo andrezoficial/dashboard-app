@@ -155,7 +155,7 @@ export default function ChatbotWidget() {
           return;
         }
         const motivo = motivos[index - 1];
-        setMotivoSeleccionado(motivo);
+        setMotivoSeleccionado({ label: motivo.label });
         agregarMensaje(
           `Has seleccionado: ${motivo.label}. Ahora elige la fecha para tu cita usando el calendario debajo.`
         );
@@ -188,7 +188,7 @@ export default function ChatbotWidget() {
           const citaData = {
       paciente: pacienteValidado._id,  // <-- Cambiado aquí
       fecha: fechaHoraISO,
-      motivo: motivoSeleccionado.value,
+      motivo: motivoSeleccionado.label,
       estado: "pendiente",
     };
 
