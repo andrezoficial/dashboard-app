@@ -46,9 +46,9 @@ export default function Citas() {
   try {
     const res = await axios.get(`${API_URL}/citas/motivos`);
     const opciones = res.data.map((m) => ({
-      value: m.toLowerCase(),
-      label: m.charAt(0).toUpperCase() + m.slice(1),
-    }));
+  value: m.value,     // ya es string en minúsculas
+  label: m.label,     // ya tiene primera letra mayúscula
+}));
     setMotivos(opciones);
   } catch (error) {
     toast.error("Error cargando motivos");
