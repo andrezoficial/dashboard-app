@@ -17,7 +17,7 @@ export default function ChatbotWidget() {
     {
       id: 0,
       texto:
-        "Hola, soy el chatbot de Vior Clinic. ¿Quieres agendar una cita? Por favor escribe tu correo electrónico o numero de documento.",
+        "Hola, soy el chatbot de Vior Clinic. ¿Quieres agendar una cita? Por favor escribe tu correo electrónico.",
     },
   ]);
 
