@@ -186,10 +186,11 @@ export default function ChatbotWidget() {
           ).toISOString();
 
           const citaData = {
-            paciente: pacienteValidado._id, // ojo que el backend espera 'paciente', no 'pacienteId'
-            fecha: fechaHoraISO,
-            motivo: motivoSeleccionado.value,
-          };
+      paciente: pacienteValidado._id,  // <-- Cambiado aquí
+      fecha: fechaHoraISO,
+      motivo: motivoSeleccionado.value,
+      estado: "pendiente",
+    };
 
           agregarMensaje("Agendando tu cita...");
           await crearCita(citaData);
