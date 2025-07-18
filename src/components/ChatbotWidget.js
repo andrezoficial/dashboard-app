@@ -32,9 +32,15 @@ export default function ChatbotWidget() {
   const [horariosDisponibles, setHorariosDisponibles] = useState([]);
   const [horarioSeleccionado, setHorarioSeleccionado] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   // Referencias
   const divMensajesRef = useRef(null);
+
+  // Validación de correo
+  const esCorreoValido = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
   // Verificar el tamaño de pantalla
   useEffect(() => {
@@ -65,6 +71,7 @@ export default function ChatbotWidget() {
   // Cargar motivos desde backend
   const cargarMotivos = async () => {
     try {
+      setIsTyping(true);
       const datos = await getMotivos();
       setMotivos(datos);
       agregarMensaje(
@@ -75,12 +82,15 @@ export default function ChatbotWidget() {
     } catch (error) {
       console.error(error);
       agregarMensaje("No se pudieron cargar los motivos. Intenta más tarde.");
+    } finally {
+      setIsTyping(false);
     }
   };
 
   // Cargar horarios según fecha
   const cargarHorarios = async (fecha) => {
     try {
+      setIsTyping(true);
       const fechaISO = format(fecha, "yyyy-MM-dd");
       const horarios = await getHorarios(fechaISO);
       setHorariosDisponibles(horarios);
@@ -101,15 +111,19 @@ export default function ChatbotWidget() {
       console.error(error);
       agregarMensaje("Error al obtener horarios. Intenta más tarde.");
       setPaso("seleccionarFecha");
+    } finally {
+      setIsTyping(false);
     }
   };
 
   // Función principal para enviar mensajes
   const enviarMensaje = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isSending) return;
+    
     const textoUsuario = input.trim();
     agregarMensaje(textoUsuario, true);
     setInput("");
+    setIsSending(true);
 
     const texto = textoUsuario.toLowerCase();
 
@@ -143,11 +157,19 @@ export default function ChatbotWidget() {
 
     if (saludoDetectado) {
       agregarMensaje(saludoDetectado.respuesta);
+      setIsSending(false);
       return;
     }
 
     try {
+      setIsTyping(true);
+      
       if (paso === "esperandoCorreo") {
+        if (!esCorreoValido(textoUsuario)) {
+          agregarMensaje("Por favor ingresa un correo válido.");
+          return;
+        }
+        
         setCorreo(textoUsuario);
         agregarMensaje("Enviando código de verificación a tu correo...");
         await enviarCodigoVerificacion(textoUsuario);
@@ -157,13 +179,18 @@ export default function ChatbotWidget() {
         setCodigo(textoUsuario);
         agregarMensaje("Validando código...");
         const respuesta = await validarCodigoVerificacion(correo, textoUsuario);
+        
+        if (!respuesta?.paciente) {
+          throw new Error("No se pudo validar el paciente");
+        }
+        
         setPacienteValidado(respuesta.paciente);
         agregarMensaje("¡Código validado!");
         await cargarMotivos();
       } else if (paso === "mostrarMotivos") {
         const index = parseInt(textoUsuario, 10);
         if (!index || index < 1 || index > motivos.length) {
-          agregarMensaje("Por favor escribe un número válido del 1 al " + motivos.length);
+          agregarMensaje(`Por favor escribe un número válido del 1 al ${motivos.length}`);
           return;
         }
         const motivo = motivos[index - 1];
@@ -175,7 +202,7 @@ export default function ChatbotWidget() {
       } else if (paso === "seleccionarHorario") {
         const index = parseInt(textoUsuario, 10);
         if (!index || index < 1 || index > horariosDisponibles.length) {
-          agregarMensaje("Por favor escribe un número válido para elegir un horario.");
+          agregarMensaje(`Por favor escribe un número válido del 1 al ${horariosDisponibles.length}`);
           return;
         }
         const horario = horariosDisponibles[index - 1];
@@ -225,6 +252,9 @@ export default function ChatbotWidget() {
       } else {
         agregarMensaje("Ocurrió un error. Intenta nuevamente más tarde.");
       }
+    } finally {
+      setIsTyping(false);
+      setIsSending(false);
     }
   };
 
@@ -240,7 +270,7 @@ export default function ChatbotWidget() {
 
   // Manejar tecla Enter
   const onKeyDown = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !isSending) {
       enviarMensaje();
     }
   };
@@ -267,6 +297,8 @@ export default function ChatbotWidget() {
             fontFamily: "'Inter', sans-serif",
           }}
           aria-live="polite"
+          role="dialog"
+          aria-labelledby="chatbot-title"
         >
           <div
             style={{
@@ -282,14 +314,18 @@ export default function ChatbotWidget() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 12,
-                height: 12,
-                borderRadius: '50%',
-                backgroundColor: '#4ade80',
-                boxShadow: '0 0 8px rgba(74, 222, 128, 0.7)'
-              }} />
-              <strong style={{ fontSize: 16, fontWeight: 600 }}>Chatbot Vior Clinic</strong>
+              <div 
+                role="status"
+                aria-label="Chatbot activo"
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  backgroundColor: '#4ade80',
+                  boxShadow: '0 0 8px rgba(74, 222, 128, 0.7)'
+                }} 
+              />
+              <strong id="chatbot-title" style={{ fontSize: 16, fontWeight: 600 }}>Chatbot Vior Clinic</strong>
             </div>
             <button
               onClick={() => setVisible(false)}
@@ -321,6 +357,8 @@ export default function ChatbotWidget() {
               background: "#f9fafb",
               WebkitOverflowScrolling: 'touch',
             }}
+            role="log"
+            aria-live="polite"
           >
             {mensajes.map(({ id, texto, usuario }) => (
               <div
@@ -330,6 +368,8 @@ export default function ChatbotWidget() {
                   textAlign: usuario ? "right" : "left",
                   animation: "fadeIn 0.3s ease",
                 }}
+                role={usuario ? "status" : "article"}
+                aria-atomic="true"
               >
                 <div
                   style={{
@@ -352,25 +392,32 @@ export default function ChatbotWidget() {
                     </React.Fragment>
                   ))}
                 </div>
-                <div style={{
-                  fontSize: 11,
-                  color: "#6b7280",
-                  marginTop: 4,
-                  marginLeft: usuario ? 0 : 8,
-                  marginRight: usuario ? 8 : 0,
-                }}>
+                <div 
+                  style={{
+                    fontSize: 11,
+                    color: "#6b7280",
+                    marginTop: 4,
+                    marginLeft: usuario ? 0 : 8,
+                    marginRight: usuario ? 8 : 0,
+                  }}
+                  aria-hidden="true"
+                >
                   {usuario ? 'Tú' : 'Asistente'}
                 </div>
               </div>
             ))}
             {isTyping && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '8px 16px',
-                marginBottom: 12
-              }}>
+              <div 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '8px 16px',
+                  marginBottom: 12
+                }}
+                aria-live="polite"
+                aria-label="El asistente está escribiendo"
+              >
                 <div style={{
                   width: 8,
                   height: 8,
@@ -417,6 +464,7 @@ export default function ChatbotWidget() {
                 minDate={new Date()}
                 inline
                 calendarClassName="custom-calendar"
+                aria-label="Seleccionar fecha para la cita"
               />
             </div>
           )}
@@ -448,24 +496,29 @@ export default function ChatbotWidget() {
                 backgroundColor: "#f9fafb",
               }}
               placeholder="Escribe tu mensaje..."
-              disabled={paso === "seleccionarFecha"}
+              disabled={paso === "seleccionarFecha" || isSending}
+              aria-label="Escribe tu mensaje"
+              aria-disabled={paso === "seleccionarFecha" || isSending}
             />
             <button
               onClick={enviarMensaje}
               style={{
-                backgroundColor: "#3b82f6",
+                backgroundColor: isSending ? "#9ca3af" : "#3b82f6",
                 color: "white",
                 border: "none",
                 borderRadius: 24,
                 padding: "12px 20px",
-                cursor: "pointer",
+                cursor: isSending ? "not-allowed" : "pointer",
                 fontWeight: 500,
                 fontSize: 14,
                 minWidth: 80,
+                transition: "background-color 0.2s ease",
               }}
-              disabled={paso === "seleccionarFecha" || !input.trim()}
+              disabled={paso === "seleccionarFecha" || !input.trim() || isSending}
+              aria-label="Enviar mensaje"
+              aria-disabled={paso === "seleccionarFecha" || !input.trim() || isSending}
             >
-              Enviar
+              {isSending ? "..." : "Enviar"}
             </button>
           </div>
         </div>
@@ -490,7 +543,7 @@ export default function ChatbotWidget() {
             fontSize: 24,
             zIndex: 9998,
           }}
-          aria-label="Abrir Chatbot"
+          aria-label="Abrir Chatbot de Vior Clinic"
         >
           💬
         </button>
