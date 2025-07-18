@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import {
+  enviarCodigoVerificacion,
+  validarCodigoVerificacion,
+  crearCita,
+  getMotivos,
+  getHorarios,
+} from "../services/api";
 import { format } from "date-fns";
 
-// Sonidos (opcional - puedes eliminar si no los necesitas)
-const messageSound = new Audio(process.env.PUBLIC_URL + '/sounds/message.mp3');
-const notificationSound = new Audio(process.env.PUBLIC_URL + '/sounds/notification.mp3');
-const successSound = new Audio(process.env.PUBLIC_URL + '/sounds/success.mp3');
 export default function ChatbotWidget() {
   const [visible, setVisible] = useState(false);
   const [input, setInput] = useState("");
@@ -18,18 +21,7 @@ export default function ChatbotWidget() {
   ]);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Verificar el tamaño de pantalla al montar y en cambios
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Resto de tu lógica (paso, correo, codigo, etc.) permanece igual
+  // Estados del flujo
   const [paso, setPaso] = useState("esperandoCorreo");
   const [correo, setCorreo] = useState("");
   const [codigo, setCodigo] = useState("");
@@ -43,32 +35,218 @@ export default function ChatbotWidget() {
 
   // Referencias
   const divMensajesRef = useRef(null);
-  const audioRef = useRef(null);
-  const notificationRef = useRef(null);
-  const successRef = useRef(null);
 
-  // Función para reproducir sonidos (opcional)
-  const playSound = (type) => {
-    if (!audioRef.current) return;
+  // Verificar el tamaño de pantalla
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Scroll automático
+  useEffect(() => {
+    if (divMensajesRef.current) {
+      divMensajesRef.current.scrollTop = divMensajesRef.current.scrollHeight;
+    }
+  }, [mensajes]);
+
+  // Función para agregar mensajes
+  const agregarMensaje = (texto, usuario = false) => {
+    setMensajes((prev) => [
+      ...prev,
+      { id: prev.length + 1, texto, usuario },
+    ]);
+  };
+
+  // Cargar motivos desde backend
+  const cargarMotivos = async () => {
     try {
-      if (type === 'message') {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play();
-      } // ... resto de sonidos
-    } catch (e) {
-      console.log("Error al reproducir sonido:", e);
+      const datos = await getMotivos();
+      setMotivos(datos);
+      agregarMensaje(
+        "Por favor, elige el motivo de tu cita escribiendo el número:\n" +
+          datos.map((m, i) => `${i + 1}. ${m.label}`).join("\n")
+      );
+      setPaso("mostrarMotivos");
+    } catch (error) {
+      console.error(error);
+      agregarMensaje("No se pudieron cargar los motivos. Intenta más tarde.");
     }
   };
 
-  // Resto de tus funciones (agregarMensaje, cargarMotivos, etc.) permanecen igual
+  // Cargar horarios según fecha
+  const cargarHorarios = async (fecha) => {
+    try {
+      const fechaISO = format(fecha, "yyyy-MM-dd");
+      const horarios = await getHorarios(fechaISO);
+      setHorariosDisponibles(horarios);
+
+      if (horarios.length === 0) {
+        agregarMensaje(
+          "No hay horarios disponibles para esa fecha. Por favor elige otra fecha."
+        );
+        setPaso("seleccionarFecha");
+      } else {
+        agregarMensaje(
+          "Estos son los horarios disponibles. Escribe el número del horario que prefieres:\n" +
+            horarios.map((h, i) => `${i + 1}. ${h}`).join("\n")
+        );
+        setPaso("seleccionarHorario");
+      }
+    } catch (error) {
+      console.error(error);
+      agregarMensaje("Error al obtener horarios. Intenta más tarde.");
+      setPaso("seleccionarFecha");
+    }
+  };
+
+  // Función principal para enviar mensajes
+  const enviarMensaje = async () => {
+    if (!input.trim()) return;
+    const textoUsuario = input.trim();
+    agregarMensaje(textoUsuario, true);
+    setInput("");
+
+    const texto = textoUsuario.toLowerCase();
+
+    // Detectar saludos
+    const saludos = [
+      {
+        palabras: ["hola", "hi"],
+        respuesta: "¡Hola! ¿Cómo estás? Por favor, dime tu correo para continuar con la cita.",
+      },
+      {
+        palabras: ["buenos días", "buen dia"],
+        respuesta: "¡Buenos días! ¿Deseas agendar una cita? Por favor, escribe tu correo electrónico.",
+      },
+      {
+        palabras: ["buenas tardes"],
+        respuesta: "¡Buenas tardes! Estoy aquí para ayudarte a agendar tu cita. Escribe tu correo, por favor.",
+      },
+      {
+        palabras: ["buenas noches"],
+        respuesta: "¡Buenas noches! ¿Te gustaría agendar una cita? Por favor, dime tu correo.",
+      },
+      {
+        palabras: ["como estas", "cómo estás"],
+        respuesta: "Excelente y tú ¿Cómo estás? Por favor, dime tu correo para continuar con la cita.",
+      },
+    ];
+
+    const saludoDetectado = saludos.find(({ palabras }) =>
+      palabras.some((palabra) => texto.includes(palabra))
+    );
+
+    if (saludoDetectado) {
+      agregarMensaje(saludoDetectado.respuesta);
+      return;
+    }
+
+    try {
+      if (paso === "esperandoCorreo") {
+        setCorreo(textoUsuario);
+        agregarMensaje("Enviando código de verificación a tu correo...");
+        await enviarCodigoVerificacion(textoUsuario);
+        agregarMensaje("Código enviado. Por favor, ingresa el código que recibiste en tu correo.");
+        setPaso("esperandoCodigo");
+      } else if (paso === "esperandoCodigo") {
+        setCodigo(textoUsuario);
+        agregarMensaje("Validando código...");
+        const respuesta = await validarCodigoVerificacion(correo, textoUsuario);
+        setPacienteValidado(respuesta.paciente);
+        agregarMensaje("¡Código validado!");
+        await cargarMotivos();
+      } else if (paso === "mostrarMotivos") {
+        const index = parseInt(textoUsuario, 10);
+        if (!index || index < 1 || index > motivos.length) {
+          agregarMensaje("Por favor escribe un número válido del 1 al " + motivos.length);
+          return;
+        }
+        const motivo = motivos[index - 1];
+        setMotivoSeleccionado({ label: motivo.label });
+        agregarMensaje(`Has seleccionado: ${motivo.label}. Ahora elige la fecha para tu cita usando el calendario debajo.`);
+        setPaso("seleccionarFecha");
+      } else if (paso === "seleccionarFecha") {
+        agregarMensaje("Por favor usa el calendario para elegir una fecha, no escribas texto.");
+      } else if (paso === "seleccionarHorario") {
+        const index = parseInt(textoUsuario, 10);
+        if (!index || index < 1 || index > horariosDisponibles.length) {
+          agregarMensaje("Por favor escribe un número válido para elegir un horario.");
+          return;
+        }
+        const horario = horariosDisponibles[index - 1];
+        setHorarioSeleccionado(horario);
+        agregarMensaje(
+          `Has seleccionado el horario ${horario}. Confirmo que agendamos tu cita para el ${format(
+            fechaSeleccionada, "yyyy-MM-dd"
+          )} a las ${horario}. Escribe "sí" para confirmar o "no" para cancelar.`
+        );
+        setPaso("confirmacion");
+      } else if (paso === "confirmacion") {
+        if (texto === "sí" || texto === "si") {
+          const fechaHoraISO = new Date(
+            `${format(fechaSeleccionada, "yyyy-MM-dd")}T${horarioSeleccionado}:00`
+          ).toISOString();
+
+          const citaData = {
+            paciente: pacienteValidado._id,
+            fecha: fechaHoraISO,
+            motivo: motivoSeleccionado.label,
+            estado: "pendiente",
+          };
+
+          agregarMensaje("Agendando tu cita...");
+          await crearCita(citaData);
+          agregarMensaje("¡Cita agendada con éxito! Gracias por usar Vior Clinic.");
+          setPaso("finalizado");
+        } else if (texto === "no") {
+          agregarMensaje("Cita cancelada. Si quieres agendar otra cita, escribe tu correo electrónico.");
+          resetearEstado();
+        } else {
+          agregarMensaje('Por favor responde "sí" para confirmar o "no" para cancelar.');
+        }
+      } else if (paso === "finalizado") {
+        agregarMensaje("Si quieres agendar otra cita, escribe tu correo electrónico.");
+        resetearEstado();
+      } else {
+        agregarMensaje("Lo siento, no entendí eso. Por favor sigue el flujo para agendar una cita.");
+      }
+    } catch (error) {
+      console.error(error);
+      if (paso === "esperandoCorreo") {
+        agregarMensaje("No encontramos ese correo en nuestros registros. Verifica e intenta de nuevo.");
+      } else if (paso === "esperandoCodigo") {
+        agregarMensaje("Código incorrecto o expirado. Por favor, intenta nuevamente o escribe tu correo para reenviar código.");
+        setPaso("esperandoCorreo");
+      } else {
+        agregarMensaje("Ocurrió un error. Intenta nuevamente más tarde.");
+      }
+    }
+  };
+
+  // Función para limpiar estado y reiniciar flujo
+  const resetearEstado = () => {
+    setPaso("esperandoCorreo");
+    setMotivoSeleccionado(null);
+    setFechaSeleccionada(null);
+    setHorarioSeleccionado(null);
+    setPacienteValidado(null);
+    setCorreo("");
+  };
+
+  // Manejar tecla Enter
+  const onKeyDown = (e) => {
+    if (e.key === "Enter") {
+      enviarMensaje();
+    }
+  };
 
   return (
     <>
-      {/* Elementos de audio (opcional) */}
-      <audio ref={audioRef} src={messageSound} preload="auto" />
-      <audio ref={notificationRef} src={notificationSound} preload="auto" />
-      <audio ref={successRef} src={successSound} preload="auto" />
-      
       {visible ? (
         <div
           style={{
@@ -90,7 +268,6 @@ export default function ChatbotWidget() {
           }}
           aria-live="polite"
         >
-          {/* Header del Chatbot */}
           <div
             style={{
               background: "linear-gradient(135deg, #3b82f6, #2563eb)",
@@ -134,7 +311,6 @@ export default function ChatbotWidget() {
             </button>
           </div>
 
-          {/* Área de mensajes */}
           <div
             ref={divMensajesRef}
             style={{
@@ -143,7 +319,7 @@ export default function ChatbotWidget() {
               overflowY: "auto",
               fontSize: 14,
               background: "#f9fafb",
-              WebkitOverflowScrolling: 'touch', // Mejor scroll en iOS
+              WebkitOverflowScrolling: 'touch',
             }}
           >
             {mensajes.map(({ id, texto, usuario }) => (
@@ -176,6 +352,15 @@ export default function ChatbotWidget() {
                     </React.Fragment>
                   ))}
                 </div>
+                <div style={{
+                  fontSize: 11,
+                  color: "#6b7280",
+                  marginTop: 4,
+                  marginLeft: usuario ? 0 : 8,
+                  marginRight: usuario ? 8 : 0,
+                }}>
+                  {usuario ? 'Tú' : 'Asistente'}
+                </div>
               </div>
             ))}
             {isTyping && (
@@ -193,12 +378,26 @@ export default function ChatbotWidget() {
                   backgroundColor: '#9ca3af',
                   animation: 'bounce 1.4s infinite ease-in-out'
                 }} />
-                {/* Puntos de typing animation */}
+                <div style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  backgroundColor: '#9ca3af',
+                  animation: 'bounce 1.4s infinite ease-in-out',
+                  animationDelay: '0.2s'
+                }} />
+                <div style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  backgroundColor: '#9ca3af',
+                  animation: 'bounce 1.4s infinite ease-in-out',
+                  animationDelay: '0.4s'
+                }} />
               </div>
             )}
           </div>
 
-          {/* Selector de fecha (si aplica) */}
           {paso === "seleccionarFecha" && (
             <div
               style={{
@@ -218,12 +417,10 @@ export default function ChatbotWidget() {
                 minDate={new Date()}
                 inline
                 calendarClassName="custom-calendar"
-                popperPlacement="top-start"
               />
             </div>
           )}
 
-          {/* Área de entrada */}
           <div
             style={{
               padding: "12px 16px",
@@ -299,7 +496,6 @@ export default function ChatbotWidget() {
         </button>
       )}
 
-      {/* Estilos globales para móviles */}
       <style>
         {`
           @keyframes fadeIn {
