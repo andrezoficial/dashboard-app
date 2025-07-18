@@ -153,13 +153,13 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     pdf.save(`historia_clinica_${nombre}.pdf`);
   };
 
-  const cargarDiagnosticos = async (inputValue) => {
+const cargarDiagnosticos = async (inputValue) => {
   if (!inputValue || inputValue.length < 3) return [];
 
   try {
     const token = localStorage.getItem('token');
     const { data } = await axios.get(
-      `${API_BASE_URL}/icd11/buscar`,    // API propia de tu backend
+      `${API_BASE_URL}/icd11/buscar`,
       {
         params: { termino: inputValue },
         headers: { Authorization: `Bearer ${token}` }
@@ -169,8 +169,8 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
       value: item.code,
       label: `${item.code} - ${item.title}`
     }));
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error('Error cargando diagnósticos:', error);
     return [];
   }
 };
