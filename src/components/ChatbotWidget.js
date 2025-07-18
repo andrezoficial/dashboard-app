@@ -92,16 +92,28 @@ export default function ChatbotWidget() {
     setVisible(true);
   };
 
-  // Cargar motivos desde backend
+  // Cargar motivos desde backend con botones
   const cargarMotivos = async () => {
     try {
       setIsTyping(true);
       const datos = await getMotivos();
       setMotivos(datos);
-      agregarMensaje(
-        "Por favor, elige el motivo de tu cita escribiendo el número:\n" +
-          datos.map((m, i) => `${i + 1}. ${m.label}`).join("\n")
-      );
+      
+      agregarMensaje("Por favor, selecciona el motivo de tu cita:");
+      
+      setMensajes(prev => [
+        ...prev,
+        { 
+          id: prev.length + 1, 
+          texto: "MOTIVOS_OPCIONES", 
+          opciones: datos.map((m, i) => ({
+            texto: `${i + 1}. ${m.label}`,
+            valor: i + 1
+          })),
+          usuario: false
+        }
+      ]);
+      
       setPaso("mostrarMotivos");
     } catch (error) {
       console.error(error);
@@ -111,7 +123,7 @@ export default function ChatbotWidget() {
     }
   };
 
-  // Cargar horarios según fecha
+  // Cargar horarios según fecha con botones
   const cargarHorarios = async (fecha) => {
     try {
       if (isBefore(fecha, new Date())) {
@@ -131,10 +143,21 @@ export default function ChatbotWidget() {
         );
         setPaso("seleccionarFecha");
       } else {
-        agregarMensaje(
-          "Estos son los horarios disponibles. Escribe el número del horario que prefieres:\n" +
-            horarios.map((h, i) => `${i + 1}. ${h}`).join("\n")
-        );
+        agregarMensaje("Estos son los horarios disponibles:");
+        
+        setMensajes(prev => [
+          ...prev,
+          { 
+            id: prev.length + 1, 
+            texto: "HORARIOS_OPCIONES", 
+            opciones: horarios.map((h, i) => ({
+              texto: `${i + 1}. ${h}`,
+              valor: i + 1
+            })),
+            usuario: false
+          }
+        ]);
+        
         setPaso("seleccionarHorario");
       }
     } catch (error) {
@@ -143,6 +166,27 @@ export default function ChatbotWidget() {
       setPaso("seleccionarFecha");
     } finally {
       setIsTyping(false);
+    }
+  };
+
+  // Función para manejar selección de opciones
+  const seleccionarOpcion = (valor, tipo) => {
+    if (tipo === "MOTIVOS_OPCIONES") {
+      const motivo = motivos[valor - 1];
+      setMotivoSeleccionado({ label: motivo.label });
+      agregarMensaje(`✅ Has seleccionado: ${motivo.label}`, true);
+      agregarMensaje("Ahora elige la fecha para tu cita usando el calendario debajo.");
+      setPaso("seleccionarFecha");
+    } else if (tipo === "HORARIOS_OPCIONES") {
+      const horario = horariosDisponibles[valor - 1];
+      setHorarioSeleccionado(horario);
+      agregarMensaje(`✅ Has seleccionado el horario ${horario}`, true);
+      agregarMensaje(
+        `Confirmo que agendamos tu cita para el ${format(
+          fechaSeleccionada, "yyyy-MM-dd"
+        )} a las ${horario}. Escribe "sí" para confirmar o "no" para cancelar.`
+      );
+      setPaso("confirmacion");
     }
   };
 
@@ -217,30 +261,8 @@ export default function ChatbotWidget() {
         setPacienteValidado(respuesta.paciente);
         agregarMensaje("✅ ¡Código validado correctamente!");
         await cargarMotivos();
-      } else if (paso === "mostrarMotivos") {
-        const index = parseInt(textoUsuario, 10);
-        if (!index || index < 1 || index > motivos.length) {
-          agregarMensaje(`⚠️ Por favor escribe un número válido del 1 al ${motivos.length}`, false, true);
-          return;
-        }
-        const motivo = motivos[index - 1];
-        setMotivoSeleccionado({ label: motivo.label });
-        agregarMensaje(`✅ Has seleccionado: ${motivo.label}. Ahora elige la fecha para tu cita usando el calendario debajo.`);
-        setPaso("seleccionarFecha");
       } else if (paso === "seleccionarFecha") {
         agregarMensaje("⚠️ Por favor usa el calendario para elegir una fecha, no escribas texto.", false, true);
-      } else if (paso === "seleccionarHorario") {
-        const index = parseInt(textoUsuario, 10);
-        if (!index || index < 1 || index > horariosDisponibles.length) {
-          agregarMensaje(`⚠️ Por favor escribe un número válido del 1 al ${horariosDisponibles.length}`, false, true);
-          return;
-        }
-        const horario = horariosDisponibles[index - 1];
-        setHorarioSeleccionado(horario);
-        agregarMensaje(
-          `✅ Has seleccionado el horario ${horario}.\n\nResumen de cita:\nMotivo: ${motivoSeleccionado.label}\nFecha: ${formatearFecha(fechaSeleccionada)}\nHora: ${horario}\n\nEscribe "sí" para confirmar o "no" para cancelar.`
-        );
-        setPaso("confirmacion");
       } else if (paso === "confirmacion") {
         if (confirmaciones.includes(texto)) {
           const fechaHoraISO = new Date(
@@ -320,6 +342,68 @@ export default function ChatbotWidget() {
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
     }, 1000);
+  };
+
+  // Renderizado de mensajes con soporte para botones
+  const renderizarMensaje = (mensaje) => {
+    if (mensaje.texto === "MOTIVOS_OPCIONES" || mensaje.texto === "HORARIOS_OPCIONES") {
+      return (
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          gap: '8px',
+          marginTop: '8px'
+        }}>
+          {mensaje.opciones.map((opcion) => (
+            <button
+              key={opcion.valor}
+              onClick={() => seleccionarOpcion(opcion.valor, mensaje.texto)}
+              style={{
+                padding: '10px 16px',
+                borderRadius: '8px',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontSize: '14px',
+                transition: 'background-color 0.2s ease',
+                ':hover': {
+                  backgroundColor: '#2563eb',
+                }
+              }}
+            >
+              {opcion.texto}
+            </button>
+          ))}
+        </div>
+      );
+    }
+    
+    return (
+      <div
+        style={{
+          display: "inline-block",
+          padding: "10px 16px",
+          borderRadius: mensaje.usuario ? "18px 18px 0 18px" : "18px 18px 18px 0",
+          backgroundColor: mensaje.usuario ? "#3b82f6" : mensaje.texto.includes('⚠️') ? '#fee2e2' : '#e5e7eb',
+          color: mensaje.usuario ? "white" : mensaje.texto.includes('⚠️') ? '#b91c1c' : '#111827',
+          maxWidth: "85%",
+          wordWrap: "break-word",
+          boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+          lineHeight: 1.5,
+          fontSize: 14,
+          border: mensaje.texto.includes('⚠️') ? '1px solid #fca5a5' : 'none',
+        }}
+      >
+        {mensaje.texto.split('\n').map((line, i) => (
+          <React.Fragment key={i}>
+            {line}
+            <br />
+          </React.Fragment>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -408,7 +492,7 @@ export default function ChatbotWidget() {
             role="log"
             aria-live="polite"
           >
-            {mensajes.map(({ id, texto, usuario }) => (
+            {mensajes.map(({ id, texto, usuario, opciones }) => (
               <div
                 key={id}
                 style={{
@@ -419,40 +503,25 @@ export default function ChatbotWidget() {
                 role={usuario ? "status" : "article"}
                 aria-atomic="true"
               >
-                <div
-                  style={{
-                    display: "inline-block",
-                    padding: "10px 16px",
-                    borderRadius: usuario ? "18px 18px 0 18px" : "18px 18px 18px 0",
-                    backgroundColor: usuario ? "#3b82f6" : texto.includes('⚠️') ? '#fee2e2' : '#e5e7eb',
-                    color: usuario ? "white" : texto.includes('⚠️') ? '#b91c1c' : '#111827',
-                    maxWidth: "85%",
-                    wordWrap: "break-word",
-                    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
-                    lineHeight: 1.5,
-                    fontSize: 14,
-                    border: texto.includes('⚠️') ? '1px solid #fca5a5' : 'none',
-                  }}
-                >
-                  {texto.split('\n').map((line, i) => (
-                    <React.Fragment key={i}>
-                      {line}
-                      <br />
-                    </React.Fragment>
-                  ))}
-                </div>
-                <div 
-                  style={{
-                    fontSize: 11,
-                    color: "#6b7280",
-                    marginTop: 4,
-                    marginLeft: usuario ? 0 : 8,
-                    marginRight: usuario ? 8 : 0,
-                  }}
-                  aria-hidden="true"
-                >
-                  {usuario ? 'Tú' : 'Asistente'}
-                </div>
+                {(texto === "MOTIVOS_OPCIONES" || texto === "HORARIOS_OPCIONES") ? (
+                  renderizarMensaje({ id, texto, usuario, opciones })
+                ) : (
+                  <>
+                    {renderizarMensaje({ id, texto, usuario })}
+                    <div 
+                      style={{
+                        fontSize: 11,
+                        color: "#6b7280",
+                        marginTop: 4,
+                        marginLeft: usuario ? 0 : 8,
+                        marginRight: usuario ? 8 : 0,
+                      }}
+                      aria-hidden="true"
+                    >
+                      {usuario ? 'Tú' : 'Asistente'}
+                    </div>
+                  </>
+                )}
               </div>
             ))}
             {isTyping && (
@@ -500,7 +569,7 @@ export default function ChatbotWidget() {
                 padding: 12,
                 borderTop: "1px solid #e5e7eb",
                 backgroundColor: "#ffffff",
-                maxHeight: isMobile ? "40vh" : "auto",
+                maxHeight: isMobile ? "60vh" : "auto",
                 overflowY: "auto",
               }}
             >
@@ -519,6 +588,9 @@ export default function ChatbotWidget() {
                 calendarClassName="custom-calendar"
                 aria-label="Seleccionar fecha para la cita"
                 locale={es}
+                withPortal={isMobile}
+                shouldCloseOnSelect={false}
+                monthsShown={isMobile ? 1 : 2}
               />
             </div>
           )}
@@ -620,23 +692,48 @@ export default function ChatbotWidget() {
           
           .react-datepicker {
             width: 100% !important;
-            font-size: ${isMobile ? '14px' : '16px'} !important;
+            font-size: ${isMobile ? '16px' : '14px'} !important;
+          }
+          
+          .react-datepicker__header {
+            padding: ${isMobile ? '16px' : '8px'} !important;
           }
           
           .react-datepicker__month-container {
             width: 100% !important;
+            float: none !important;
           }
           
           .react-datepicker__day {
-            width: ${isMobile ? '2.5rem' : '2rem'} !important;
-            line-height: ${isMobile ? '2.5rem' : '2rem'} !important;
-            margin: ${isMobile ? '0.2rem' : '0.166rem'} !important;
+            width: ${isMobile ? '3rem' : '2rem'} !important;
+            height: ${isMobile ? '3rem' : '2rem'} !important;
+            line-height: ${isMobile ? '3rem' : '2rem'} !important;
+            margin: ${isMobile ? '0.3rem' : '0.166rem'} !important;
+            font-size: ${isMobile ? '16px' : '14px'} !important;
           }
           
-          @media (max-width: 768px) {
-            .react-datepicker__day-name, 
-            .react-datepicker__day {
+          .react-datepicker__day-name {
+            width: ${isMobile ? '3rem' : '2rem'} !important;
+            height: ${isMobile ? '2rem' : '1.5rem'} !important;
+            line-height: ${isMobile ? '2rem' : '1.5rem'} !important;
+            font-size: ${isMobile ? '14px' : '12px'} !important;
+            margin: ${isMobile ? '0.3rem' : '0.166rem'} !important;
+          }
+          
+          .react-datepicker__current-month {
+            font-size: ${isMobile ? '18px' : '16px'} !important;
+            margin-bottom: ${isMobile ? '8px' : '4px'} !important;
+          }
+          
+          .react-datepicker__navigation {
+            top: ${isMobile ? '20px' : '10px'} !important;
+          }
+          
+          @media (max-width: 480px) {
+            .react-datepicker__day, 
+            .react-datepicker__day-name {
               width: 2.8rem !important;
+              height: 2.8rem !important;
               line-height: 2.8rem !important;
             }
           }

@@ -44,7 +44,7 @@ export default function Citas() {
 
   const fetchMotivos = async () => {
   try {
-    const res = await axios.get(`${API_URL}/citas/motivos`);
+    const res = await axios.get(`${API_URL}/motivos`);
     const opciones = res.data.map((m) => ({
       value: m.toLowerCase(),
       label: m.charAt(0).toUpperCase() + m.slice(1),
