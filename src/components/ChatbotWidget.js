@@ -8,7 +8,8 @@ import {
   getMotivos,
   getHorarios,
 } from "../services/api";
-import { format } from "date-fns";
+import { format, isBefore } from "date-fns";
+import { es } from 'date-fns/locale';
 
 export default function ChatbotWidget() {
   const [visible, setVisible] = useState(false);
@@ -34,12 +35,22 @@ export default function ChatbotWidget() {
   const [isTyping, setIsTyping] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
+  // Palabras clave para confirmación
+  const confirmaciones = ["sí", "si", "confirmar", "ok", "vale", "yes"];
+  const negaciones = ["no", "cancelar", "negar", "nope"];
+
   // Referencias
   const divMensajesRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   // Validación de correo
   const esCorreoValido = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  // Formatear fecha legible
+  const formatearFecha = (fecha) => {
+    return format(fecha, "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
   };
 
   // Verificar el tamaño de pantalla
@@ -60,12 +71,25 @@ export default function ChatbotWidget() {
     }
   }, [mensajes]);
 
-  // Función para agregar mensajes
-  const agregarMensaje = (texto, usuario = false) => {
+  // Función para agregar mensajes con estilos para errores
+  const agregarMensaje = (texto, usuario = false, esError = false) => {
+    const mensaje = esError ? `⚠️ ${texto}` : texto;
     setMensajes((prev) => [
       ...prev,
-      { id: prev.length + 1, texto, usuario },
+      { id: prev.length + 1, texto: mensaje, usuario },
     ]);
+  };
+
+  // Función para reiniciar el chat
+  const reiniciarChat = () => {
+    setMensajes([
+      {
+        id: 0,
+        texto: "Hola, soy el chatbot de Vior Clinic. ¿Quieres agendar una cita? Por favor escribe tu correo electrónico.",
+      },
+    ]);
+    resetearEstado();
+    setVisible(true);
   };
 
   // Cargar motivos desde backend
@@ -81,7 +105,7 @@ export default function ChatbotWidget() {
       setPaso("mostrarMotivos");
     } catch (error) {
       console.error(error);
-      agregarMensaje("No se pudieron cargar los motivos. Intenta más tarde.");
+      agregarMensaje("⚠️ No se pudieron cargar los motivos. Intenta más tarde.", false, true);
     } finally {
       setIsTyping(false);
     }
@@ -90,6 +114,11 @@ export default function ChatbotWidget() {
   // Cargar horarios según fecha
   const cargarHorarios = async (fecha) => {
     try {
+      if (isBefore(fecha, new Date())) {
+        agregarMensaje("⚠️ No puedes seleccionar una fecha pasada.", false, true);
+        return;
+      }
+
       setIsTyping(true);
       const fechaISO = format(fecha, "yyyy-MM-dd");
       const horarios = await getHorarios(fechaISO);
@@ -97,7 +126,8 @@ export default function ChatbotWidget() {
 
       if (horarios.length === 0) {
         agregarMensaje(
-          "No hay horarios disponibles para esa fecha. Por favor elige otra fecha."
+          "⚠️ No hay horarios disponibles para esa fecha. Por favor elige otra fecha.",
+          false, true
         );
         setPaso("seleccionarFecha");
       } else {
@@ -109,7 +139,7 @@ export default function ChatbotWidget() {
       }
     } catch (error) {
       console.error(error);
-      agregarMensaje("Error al obtener horarios. Intenta más tarde.");
+      agregarMensaje("⚠️ Error al obtener horarios. Intenta más tarde.", false, true);
       setPaso("seleccionarFecha");
     } finally {
       setIsTyping(false);
@@ -130,23 +160,23 @@ export default function ChatbotWidget() {
     // Detectar saludos
     const saludos = [
       {
-        palabras: ["hola", "hi"],
+        palabras: ["hola", "hi", "hello"],
         respuesta: "¡Hola! ¿Cómo estás? Por favor, dime tu correo para continuar con la cita.",
       },
       {
-        palabras: ["buenos días", "buen dia"],
+        palabras: ["buenos días", "buen dia", "good morning"],
         respuesta: "¡Buenos días! ¿Deseas agendar una cita? Por favor, escribe tu correo electrónico.",
       },
       {
-        palabras: ["buenas tardes"],
+        palabras: ["buenas tardes", "good afternoon"],
         respuesta: "¡Buenas tardes! Estoy aquí para ayudarte a agendar tu cita. Escribe tu correo, por favor.",
       },
       {
-        palabras: ["buenas noches"],
+        palabras: ["buenas noches", "good night"],
         respuesta: "¡Buenas noches! ¿Te gustaría agendar una cita? Por favor, dime tu correo.",
       },
       {
-        palabras: ["como estas", "cómo estás"],
+        palabras: ["como estas", "cómo estás", "how are you"],
         respuesta: "Excelente y tú ¿Cómo estás? Por favor, dime tu correo para continuar con la cita.",
       },
     ];
@@ -166,14 +196,14 @@ export default function ChatbotWidget() {
       
       if (paso === "esperandoCorreo") {
         if (!esCorreoValido(textoUsuario)) {
-          agregarMensaje("Por favor ingresa un correo válido.");
+          agregarMensaje("⚠️ Por favor ingresa un correo válido.", false, true);
           return;
         }
         
         setCorreo(textoUsuario);
         agregarMensaje("Enviando código de verificación a tu correo...");
         await enviarCodigoVerificacion(textoUsuario);
-        agregarMensaje("Código enviado. Por favor, ingresa el código que recibiste en tu correo.");
+        agregarMensaje("✅ Código enviado. Por favor, ingresa el código que recibiste en tu correo.");
         setPaso("esperandoCodigo");
       } else if (paso === "esperandoCodigo") {
         setCodigo(textoUsuario);
@@ -185,36 +215,34 @@ export default function ChatbotWidget() {
         }
         
         setPacienteValidado(respuesta.paciente);
-        agregarMensaje("¡Código validado!");
+        agregarMensaje("✅ ¡Código validado correctamente!");
         await cargarMotivos();
       } else if (paso === "mostrarMotivos") {
         const index = parseInt(textoUsuario, 10);
         if (!index || index < 1 || index > motivos.length) {
-          agregarMensaje(`Por favor escribe un número válido del 1 al ${motivos.length}`);
+          agregarMensaje(`⚠️ Por favor escribe un número válido del 1 al ${motivos.length}`, false, true);
           return;
         }
         const motivo = motivos[index - 1];
         setMotivoSeleccionado({ label: motivo.label });
-        agregarMensaje(`Has seleccionado: ${motivo.label}. Ahora elige la fecha para tu cita usando el calendario debajo.`);
+        agregarMensaje(`✅ Has seleccionado: ${motivo.label}. Ahora elige la fecha para tu cita usando el calendario debajo.`);
         setPaso("seleccionarFecha");
       } else if (paso === "seleccionarFecha") {
-        agregarMensaje("Por favor usa el calendario para elegir una fecha, no escribas texto.");
+        agregarMensaje("⚠️ Por favor usa el calendario para elegir una fecha, no escribas texto.", false, true);
       } else if (paso === "seleccionarHorario") {
         const index = parseInt(textoUsuario, 10);
         if (!index || index < 1 || index > horariosDisponibles.length) {
-          agregarMensaje(`Por favor escribe un número válido del 1 al ${horariosDisponibles.length}`);
+          agregarMensaje(`⚠️ Por favor escribe un número válido del 1 al ${horariosDisponibles.length}`, false, true);
           return;
         }
         const horario = horariosDisponibles[index - 1];
         setHorarioSeleccionado(horario);
         agregarMensaje(
-          `Has seleccionado el horario ${horario}. Confirmo que agendamos tu cita para el ${format(
-            fechaSeleccionada, "yyyy-MM-dd"
-          )} a las ${horario}. Escribe "sí" para confirmar o "no" para cancelar.`
+          `✅ Has seleccionado el horario ${horario}.\n\nResumen de cita:\nMotivo: ${motivoSeleccionado.label}\nFecha: ${formatearFecha(fechaSeleccionada)}\nHora: ${horario}\n\nEscribe "sí" para confirmar o "no" para cancelar.`
         );
         setPaso("confirmacion");
       } else if (paso === "confirmacion") {
-        if (texto === "sí" || texto === "si") {
+        if (confirmaciones.includes(texto)) {
           const fechaHoraISO = new Date(
             `${format(fechaSeleccionada, "yyyy-MM-dd")}T${horarioSeleccionado}:00`
           ).toISOString();
@@ -228,29 +256,32 @@ export default function ChatbotWidget() {
 
           agregarMensaje("Agendando tu cita...");
           await crearCita(citaData);
-          agregarMensaje("¡Cita agendada con éxito! Gracias por usar Vior Clinic.");
+          agregarMensaje(
+            `✅ ¡Cita agendada con éxito!\n\nDetalles:\nMotivo: ${motivoSeleccionado.label}\nFecha: ${formatearFecha(fechaSeleccionada)}\nHora: ${horarioSeleccionado}\n\nGracias por usar Vior Clinic.`
+          );
           setPaso("finalizado");
-        } else if (texto === "no") {
-          agregarMensaje("Cita cancelada. Si quieres agendar otra cita, escribe tu correo electrónico.");
+        } else if (negaciones.includes(texto)) {
+          agregarMensaje("❌ Cita cancelada. Si quieres agendar otra cita, escribe tu correo electrónico.");
           resetearEstado();
         } else {
-          agregarMensaje('Por favor responde "sí" para confirmar o "no" para cancelar.');
+          agregarMensaje('⚠️ Por favor responde "sí" para confirmar o "no" para cancelar.', false, true);
         }
       } else if (paso === "finalizado") {
         agregarMensaje("Si quieres agendar otra cita, escribe tu correo electrónico.");
         resetearEstado();
       } else {
-        agregarMensaje("Lo siento, no entendí eso. Por favor sigue el flujo para agendar una cita.");
+        agregarMensaje("⚠️ No entendí tu respuesta. Por favor, escribe tu correo electrónico para comenzar.", false, true);
+        resetearEstado();
       }
     } catch (error) {
       console.error(error);
       if (paso === "esperandoCorreo") {
-        agregarMensaje("No encontramos ese correo en nuestros registros. Verifica e intenta de nuevo.");
+        agregarMensaje("⚠️ No encontramos ese correo en nuestros registros. Verifica e intenta de nuevo.", false, true);
       } else if (paso === "esperandoCodigo") {
-        agregarMensaje("Código incorrecto o expirado. Por favor, intenta nuevamente o escribe tu correo para reenviar código.");
+        agregarMensaje("⚠️ Código incorrecto o expirado. Por favor, intenta nuevamente o escribe tu correo para reenviar código.", false, true);
         setPaso("esperandoCorreo");
       } else {
-        agregarMensaje("Ocurrió un error. Intenta nuevamente más tarde.");
+        agregarMensaje("⚠️ Ocurrió un error. Intenta nuevamente más tarde.", false, true);
       }
     } finally {
       setIsTyping(false);
@@ -266,6 +297,7 @@ export default function ChatbotWidget() {
     setHorarioSeleccionado(null);
     setPacienteValidado(null);
     setCorreo("");
+    setCodigo("");
   };
 
   // Manejar tecla Enter
@@ -273,6 +305,21 @@ export default function ChatbotWidget() {
     if (e.key === "Enter" && !isSending) {
       enviarMensaje();
     }
+  };
+
+  // Manejar cambio en el input con timeout para isTyping
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+    
+    // Resetear timeout previo
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    setIsTyping(true);
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 1000);
   };
 
   return (
@@ -299,6 +346,7 @@ export default function ChatbotWidget() {
           aria-live="polite"
           role="dialog"
           aria-labelledby="chatbot-title"
+          aria-modal="true"
         >
           <div
             style={{
@@ -376,13 +424,14 @@ export default function ChatbotWidget() {
                     display: "inline-block",
                     padding: "10px 16px",
                     borderRadius: usuario ? "18px 18px 0 18px" : "18px 18px 18px 0",
-                    backgroundColor: usuario ? "#3b82f6" : "#e5e7eb",
-                    color: usuario ? "white" : "#111827",
+                    backgroundColor: usuario ? "#3b82f6" : texto.includes('⚠️') ? '#fee2e2' : '#e5e7eb',
+                    color: usuario ? "white" : texto.includes('⚠️') ? '#b91c1c' : '#111827',
                     maxWidth: "85%",
                     wordWrap: "break-word",
                     boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
                     lineHeight: 1.5,
                     fontSize: 14,
+                    border: texto.includes('⚠️') ? '1px solid #fca5a5' : 'none',
                   }}
                 >
                   {texto.split('\n').map((line, i) => (
@@ -458,6 +507,10 @@ export default function ChatbotWidget() {
               <DatePicker
                 selected={fechaSeleccionada}
                 onChange={(date) => {
+                  if (isBefore(date, new Date())) {
+                    agregarMensaje("⚠️ No puedes seleccionar una fecha pasada.", false, true);
+                    return;
+                  }
                   setFechaSeleccionada(date);
                   cargarHorarios(date);
                 }}
@@ -465,6 +518,7 @@ export default function ChatbotWidget() {
                 inline
                 calendarClassName="custom-calendar"
                 aria-label="Seleccionar fecha para la cita"
+                locale={es}
               />
             </div>
           )}
@@ -481,10 +535,7 @@ export default function ChatbotWidget() {
             <input
               type="text"
               value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                setIsTyping(true);
-              }}
+              onChange={handleInputChange}
               onKeyDown={onKeyDown}
               style={{
                 flexGrow: 1,
@@ -524,7 +575,7 @@ export default function ChatbotWidget() {
         </div>
       ) : (
         <button
-          onClick={() => setVisible(true)}
+          onClick={reiniciarChat}
           style={{
             position: "fixed",
             bottom: 20,
