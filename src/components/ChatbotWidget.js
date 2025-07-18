@@ -7,8 +7,6 @@ import {
   crearCita,
   getMotivos,
   getHorarios,
-  actualizarCita,
-  eliminarCita,
 } from "../services/api";
 import { format } from "date-fns";
 
@@ -19,26 +17,23 @@ export default function ChatbotWidget() {
     {
       id: 0,
       texto:
-        "Hola, soy el chatbot de Vior Clinic. ¿Quieres agendar una cita? Por favor escribe tu correo electrónico.",
+        "Hola, soy el chatbot de Vior Clinic. ¿Quieres agendar una cita? Por favor escribe tu correo electrónico o numero de documento.",
     },
   ]);
 
-  // Flujo pasos: esperandoCorreo, esperandoCodigo, mostrarMotivos, seleccionarFecha, seleccionarHorario, confirmacion, finalizado, reprogramar, cancelar
+  // Flujo
   const [paso, setPaso] = useState("esperandoCorreo");
 
   const [correo, setCorreo] = useState("");
   const [codigo, setCodigo] = useState("");
   const [pacienteValidado, setPacienteValidado] = useState(null);
 
-  // NUEVO: motivos y selecciones
+  // Nuevos estados
   const [motivos, setMotivos] = useState([]);
   const [motivoSeleccionado, setMotivoSeleccionado] = useState(null);
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
   const [horariosDisponibles, setHorariosDisponibles] = useState([]);
   const [horarioSeleccionado, setHorarioSeleccionado] = useState(null);
-
-  // Cita para reprogramar o cancelar (puede venir de backend o flujo)
-  const [citaActual, setCitaActual] = useState(null);
 
   const agregarMensaje = (texto, usuario = false) => {
     setMensajes((prev) => [
@@ -47,16 +42,14 @@ export default function ChatbotWidget() {
     ]);
   };
 
-  // Función para cargar motivos desde backend
+  // Cargar motivos desde backend
   const cargarMotivos = async () => {
     try {
       const datos = await getMotivos();
       setMotivos(datos);
       agregarMensaje(
         "Por favor, elige el motivo de tu cita escribiendo el número:\n" +
-          datos
-            .map((m, i) => `${i + 1}. ${m.label}`)
-            .join("\n")
+          datos.map((m, i) => `${i + 1}. ${m.label}`).join("\n")
       );
       setPaso("mostrarMotivos");
     } catch (error) {
@@ -65,7 +58,7 @@ export default function ChatbotWidget() {
     }
   };
 
-  // Función para cargar horarios según fecha
+  // Cargar horarios según fecha
   const cargarHorarios = async (fecha) => {
     try {
       const fechaISO = format(fecha, "yyyy-MM-dd");
@@ -91,7 +84,6 @@ export default function ChatbotWidget() {
     }
   };
 
-  // Manejo del envío de mensajes, según paso
   const enviarMensaje = async () => {
     if (!input.trim()) return;
     const textoUsuario = input.trim();
@@ -100,10 +92,10 @@ export default function ChatbotWidget() {
 
     const texto = textoUsuario.toLowerCase();
 
-    // 🎯 Detectar saludos antes del flujo principal
+    // Detectar saludos para interacción más amigable
     const saludos = [
       {
-        palabras: ["hola"],
+        palabras: ["hola", "hi"],
         respuesta:
           "¡Hola! ¿Cómo estás? Por favor, dime tu correo para continuar con la cita.",
       },
@@ -123,14 +115,9 @@ export default function ChatbotWidget() {
           "¡Buenas noches! ¿Te gustaría agendar una cita? Por favor, dime tu correo.",
       },
       {
-        palabras: ["como estas"],
+        palabras: ["como estas", "cómo estás"],
         respuesta:
           "Excelente y tú ¿Cómo estás? Por favor, dime tu correo para continuar con la cita.",
-      },
-      {
-        palabras: ["hi"],
-        respuesta:
-          "¡Hola! ¿Cómo estás? Por favor, dime tu correo para continuar con la cita.",
       },
     ];
 
@@ -155,22 +142,13 @@ export default function ChatbotWidget() {
       } else if (paso === "esperandoCodigo") {
         setCodigo(textoUsuario);
         agregarMensaje("Validando código...");
-        const respuesta = await validarCodigoVerificacion(
-          correo,
-          textoUsuario
-        );
+        const respuesta = await validarCodigoVerificacion(correo, textoUsuario);
         setPacienteValidado(respuesta.paciente);
         agregarMensaje("¡Código validado!");
-        // Cargar motivos para siguiente paso
         await cargarMotivos();
       } else if (paso === "mostrarMotivos") {
-        // Esperamos un número del 1 al 5 para elegir motivo
         const index = parseInt(textoUsuario, 10);
-        if (
-          !index ||
-          index < 1 ||
-          index > motivos.length
-        ) {
+        if (!index || index < 1 || index > motivos.length) {
           agregarMensaje(
             "Por favor escribe un número válido del 1 al " + motivos.length
           );
@@ -187,16 +165,9 @@ export default function ChatbotWidget() {
           "Por favor usa el calendario para elegir una fecha, no escribas texto."
         );
       } else if (paso === "seleccionarHorario") {
-        // Esperamos un número para elegir horario
         const index = parseInt(textoUsuario, 10);
-        if (
-          !index ||
-          index < 1 ||
-          index > horariosDisponibles.length
-        ) {
-          agregarMensaje(
-            "Por favor escribe un número válido para elegir un horario."
-          );
+        if (!index || index < 1 || index > horariosDisponibles.length) {
+          agregarMensaje("Por favor escribe un número válido para elegir un horario.");
           return;
         }
         const horario = horariosDisponibles[index - 1];
@@ -210,35 +181,25 @@ export default function ChatbotWidget() {
         setPaso("confirmacion");
       } else if (paso === "confirmacion") {
         if (texto === "sí" || texto === "si") {
-          // Crear cita
           const fechaHoraISO = new Date(
             `${format(fechaSeleccionada, "yyyy-MM-dd")}T${horarioSeleccionado}:00`
           ).toISOString();
 
           const citaData = {
-            pacienteId: pacienteValidado._id,
+            paciente: pacienteValidado._id, // ojo que el backend espera 'paciente', no 'pacienteId'
             fecha: fechaHoraISO,
             motivo: motivoSeleccionado.value,
-            estado: "pendiente",
           };
 
           agregarMensaje("Agendando tu cita...");
           await crearCita(citaData);
-          agregarMensaje(
-            "¡Cita agendada con éxito! Gracias por usar Vior Clinic."
-          );
+          agregarMensaje("¡Cita agendada con éxito! Gracias por usar Vior Clinic.");
           setPaso("finalizado");
         } else if (texto === "no") {
           agregarMensaje(
             "Cita cancelada. Si quieres agendar otra cita, escribe tu correo electrónico."
           );
-          setPaso("esperandoCorreo");
-          // Limpiar estado
-          setMotivoSeleccionado(null);
-          setFechaSeleccionada(null);
-          setHorarioSeleccionado(null);
-          setPacienteValidado(null);
-          setCorreo("");
+          resetearEstado();
         } else {
           agregarMensaje('Por favor responde "sí" para confirmar o "no" para cancelar.');
         }
@@ -246,13 +207,7 @@ export default function ChatbotWidget() {
         agregarMensaje(
           "Si quieres agendar otra cita, escribe tu correo electrónico."
         );
-        setPaso("esperandoCorreo");
-        // Limpiar estado
-        setMotivoSeleccionado(null);
-        setFechaSeleccionada(null);
-        setHorarioSeleccionado(null);
-        setPacienteValidado(null);
-        setCorreo("");
+        resetearEstado();
       } else {
         agregarMensaje(
           "Lo siento, no entendí eso. Por favor sigue el flujo para agendar una cita."
@@ -275,17 +230,24 @@ export default function ChatbotWidget() {
     }
   };
 
+  // Función para limpiar estado y reiniciar flujo
+  const resetearEstado = () => {
+    setPaso("esperandoCorreo");
+    setMotivoSeleccionado(null);
+    setFechaSeleccionada(null);
+    setHorarioSeleccionado(null);
+    setPacienteValidado(null);
+    setCorreo("");
+  };
+
   const onKeyDown = (e) => {
     if (e.key === "Enter") {
       enviarMensaje();
     }
   };
 
-  // --- Renderizado ---
-
-  // Ref para scroll automático al nuevo mensaje
+  // Scroll automático
   const divMensajesRef = useRef(null);
-
   useEffect(() => {
     if (divMensajesRef.current) {
       divMensajesRef.current.scrollTop = divMensajesRef.current.scrollHeight;
@@ -373,7 +335,6 @@ export default function ChatbotWidget() {
             ))}
           </div>
 
-          {/* Mostrar calendario solo cuando toque */}
           {paso === "seleccionarFecha" && (
             <div
               style={{
@@ -395,7 +356,6 @@ export default function ChatbotWidget() {
             </div>
           )}
 
-          {/* Input y botón */}
           <div
             style={{
               padding: 10,
@@ -418,7 +378,7 @@ export default function ChatbotWidget() {
                 outline: "none",
               }}
               placeholder="Escribe tu mensaje..."
-              disabled={paso === "seleccionarFecha"} // deshabilitado cuando se usa calendario
+              disabled={paso === "seleccionarFecha"} // mientras usa calendario
             />
             <button
               onClick={enviarMensaje}
@@ -431,7 +391,7 @@ export default function ChatbotWidget() {
                 cursor: "pointer",
               }}
               aria-label="Enviar mensaje"
-              disabled={paso === "seleccionarFecha"} // deshabilitado cuando se usa calendario
+              disabled={paso === "seleccionarFecha"} // mientras usa calendario
             >
               Enviar
             </button>
