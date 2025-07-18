@@ -4,10 +4,9 @@ import "react-datepicker/dist/react-datepicker.css";
 import { format } from "date-fns";
 
 // Sonidos (opcional - puedes eliminar si no los necesitas)
-import messageSound from '../public/sounds/message.mp3';
-import notificationSound from '../public/sounds/notification.mp3';
-import successSound from '../public/sounds/success.mp3';
-
+const messageSound = new Audio(process.env.PUBLIC_URL + '/sounds/message.mp3');
+const notificationSound = new Audio(process.env.PUBLIC_URL + '/sounds/notification.mp3');
+const successSound = new Audio(process.env.PUBLIC_URL + '/sounds/success.mp3');
 export default function ChatbotWidget() {
   const [visible, setVisible] = useState(false);
   const [input, setInput] = useState("");
