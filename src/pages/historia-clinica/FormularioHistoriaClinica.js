@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import AsyncSelect from "react-select/async";
 import Select from "react-select";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -19,79 +20,77 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
   const { id: pacienteId } = useParams();
   const formRef = useRef();
 
- const [datos, setDatos] = useState({
-  motivoConsulta: "Medicina general", // valor inicial para evitar vacíos
-  antecedentes: "",
-  examenFisico: "",
-  diagnostico: "",
-  tratamiento: "",
-  recomendaciones: "",
-  cups: [],
-  cupsConNombre: [],
-  nombrePaciente: "",
-});
+  const [datos, setDatos] = useState({
+    motivoConsulta: "Medicina general",
+    antecedentes: "",
+    examenFisico: "",
+    codigoDiagnostico: "",
+    nombreDiagnostico: "",
+    tratamiento: "",
+    recomendaciones: "",
+    cups: [],
+    cupsConNombre: [],
+    nombrePaciente: "",
+  });
 
   const [cupsOpciones, setCupsOpciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-useEffect(() => {
-  if (!pacienteId) return;
+  useEffect(() => {
+    if (!pacienteId) return;
 
-  const token = localStorage.getItem("token");
-  if (!token) {
-    setError("No autorizado");
-    setLoading(false);
-    return;
-  }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("No autorizado");
+      setLoading(false);
+      return;
+    }
 
-  async function fetchData() {
-    try {
-      // 1) Intentar traer la historia clínica
-      const historiaRes = await axios.get(
-        `${API_BASE_URL}/pacientes/${pacienteId}/historia`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setDatos((prev) => ({ ...prev, ...historiaRes.data }));
-    } catch (err) {
-      if (err.response?.status === 404) {
-        // Si no existe, inicializa con valores vacíos (no es error)
-        setDatos((prev) => ({
-          ...prev,
-          motivoConsulta: "",
-          antecedentes: "",
-          examenFisico: "",
-          diagnostico: "",
-          tratamiento: "",
-          recomendaciones: "",
-          cups: [],
-          cupsConNombre: [],
-        }));
-      } else {
-        console.error("Error cargando historia clínica:", err);
-        setError("Error al cargar la historia clínica");
+    async function fetchData() {
+      try {
+        const historiaRes = await axios.get(
+          `${API_BASE_URL}/pacientes/${pacienteId}/historia`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setDatos((prev) => ({ ...prev, ...historiaRes.data }));
+      } catch (err) {
+        if (err.response?.status === 404) {
+          setDatos((prev) => ({
+            ...prev,
+            motivoConsulta: "",
+            antecedentes: "",
+            examenFisico: "",
+            codigoDiagnostico: "",
+            nombreDiagnostico: "",
+            tratamiento: "",
+            recomendaciones: "",
+            cups: [],
+            cupsConNombre: [],
+          }));
+        } else {
+          console.error("Error cargando historia clínica:", err);
+          setError("Error al cargar la historia clínica");
+          setLoading(false);
+          return;
+        }
+      }
+
+      try {
+        const cupsRes = await axios.get(`${API_BASE_URL}/cups`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setCupsOpciones(cupsRes.data);
+      } catch (err) {
+        console.error("Error cargando CUPS:", err);
+        setError("Error al cargar los CUPS");
+      } finally {
         setLoading(false);
-        return;
       }
     }
 
-    try {
-      // 2) Traer siempre las opciones de CUPS
-      const cupsRes = await axios.get(`${API_BASE_URL}/cups`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setCupsOpciones(cupsRes.data);
-    } catch (err) {
-      console.error("Error cargando CUPS:", err);
-      setError("Error al cargar los CUPS");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  fetchData();
-}, [pacienteId]);
-
+    fetchData();
+  }, [pacienteId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -154,6 +153,25 @@ useEffect(() => {
     pdf.save(`historia_clinica_${nombre}.pdf`);
   };
 
+  const cargarDiagnosticos = async (inputValue) => {
+    if (!inputValue || inputValue.length < 3) return [];
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`${API_BASE_URL}/icd11/buscar`, {
+        params: { termino: inputValue },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return response.data.map((item) => ({
+        value: item.code,
+        label: `${item.code} - ${item.label}`,
+      }));
+    } catch (error) {
+      return [];
+    }
+  };
+
   if (loading) return <p className="text-center">Cargando...</p>;
   if (error) return <p className="text-red-500 text-center">{error}</p>;
 
@@ -163,7 +181,6 @@ useEffect(() => {
       ref={formRef}
       className="space-y-4 p-4 bg-white rounded shadow-md dark:bg-gray-800"
     >
-      {/* Motivo de consulta */}
       <label className="block font-medium mb-1 text-gray-700 dark:text-white">
         Motivo de consulta
       </label>
@@ -182,7 +199,6 @@ useEffect(() => {
         ))}
       </select>
 
-      {/* Antecedentes */}
       <textarea
         name="antecedentes"
         placeholder="Antecedentes (diagnósticos previos)"
@@ -192,7 +208,6 @@ useEffect(() => {
         className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
       />
 
-      {/* Examen físico */}
       <textarea
         name="examenFisico"
         placeholder="Examen físico"
@@ -203,27 +218,35 @@ useEffect(() => {
         className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
       />
 
-      {/* Diagnóstico */}
       <div>
         <label className="block mb-1 font-medium text-gray-700 dark:text-white">
-          Diagnóstico
+          Diagnóstico (ICD-11)
         </label>
-        <Select
-          options={cupsOpciones}
-          value={cupsOpciones.find((opt) => opt.value === datos.diagnostico) || null}
-          onChange={(selected) => {
+        <AsyncSelect
+          cacheOptions
+          loadOptions={cargarDiagnosticos}
+          defaultOptions
+          value={
+            datos.codigoDiagnostico
+              ? {
+                  value: datos.codigoDiagnostico,
+                  label: `${datos.codigoDiagnostico} - ${datos.nombreDiagnostico}`,
+                }
+              : null
+          }
+          onChange={(selected) =>
             setDatos((prev) => ({
               ...prev,
-              diagnostico: selected ? selected.value : "",
-            }));
-          }}
-          placeholder="Buscar diagnóstico..."
+              codigoDiagnostico: selected?.value || "",
+              nombreDiagnostico: selected?.label?.split(" - ")[1] || "",
+            }))
+          }
+          placeholder="Buscar diagnóstico ICD-11..."
           isClearable
           className="text-black"
         />
       </div>
 
-      {/* Tratamiento */}
       <textarea
         name="tratamiento"
         placeholder="Tratamiento"
@@ -234,7 +257,6 @@ useEffect(() => {
         className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
       />
 
-      {/* Recomendaciones */}
       <textarea
         name="recomendaciones"
         placeholder="Recomendaciones"
@@ -245,7 +267,6 @@ useEffect(() => {
         className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
       />
 
-      {/* Procedimientos (CUPS) */}
       <div>
         <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-white">
           Procedimientos (CUPS)
