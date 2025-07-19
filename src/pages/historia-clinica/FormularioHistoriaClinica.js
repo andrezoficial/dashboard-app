@@ -1,234 +1,172 @@
-import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
-import axios from "axios";
-import AsyncSelect from "react-select/async";
+import React, { useState, useEffect } from "react";
 import Select from "react-select";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import AsyncSelect from "react-select/async";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const API_BASE_URL = "https://backend-dashboard-v2.onrender.com/api";
 
-const opcionesMotivoConsulta = [
-  { value: "Medicina general", label: "Medicina general" },
-  { value: "Odontología", label: "Odontología" },
-  { value: "Optometría", label: "Optometría" },
-  { value: "Medicina con especialistas", label: "Medicina con especialistas" },
-  { value: "Laboratorios", label: "Laboratorios" },
-];
-
-export default function FormularioHistoriaClinica({ onGuardar }) {
-  const { id: pacienteId } = useParams();
-  const formRef = useRef();
-
+export default function FormularioHistoriaClinica() {
   const [datos, setDatos] = useState({
-    motivoConsulta: "Medicina general",
+    pacienteId: "",
+    motivoConsulta: "",
     antecedentes: "",
-    examenFisico: "",
+    diagnostico: "", // campo para diagnóstico manual seleccionado
     codigoDiagnostico: "",
     nombreDiagnostico: "",
     tratamiento: "",
-    recomendaciones: "",
     cups: [],
-    cupsConNombre: [],
-    nombrePaciente: "",
   });
 
-  const [cupsOpciones, setCupsOpciones] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [pacientes, setPacientes] = useState([]);
+  const [motivos, setMotivos] = useState([]);
+  const [cups, setCups] = useState([]);
+
+  // Estados para búsqueda manual ICD-11 integrada
+  const [terminoICD, setTerminoICD] = useState("");
+  const [resultadosICD, setResultadosICD] = useState([]);
+  const [loadingICD, setLoadingICD] = useState(false);
 
   useEffect(() => {
-    if (!pacienteId) return;
+    const cargarDatos = async () => {
+      const token = localStorage.getItem("token");
+      const config = {
+        headers: { Authorization: `Bearer ${token}` },
+      };
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("No autorizado");
-      setLoading(false);
-      return;
-    }
-
-    async function fetchData() {
       try {
-        const historiaRes = await axios.get(
-          `${API_BASE_URL}/pacientes/${pacienteId}/historia`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setDatos((prev) => ({ ...prev, ...historiaRes.data }));
-      } catch (err) {
-        if (err.response?.status === 404) {
-          setDatos((prev) => ({
-            ...prev,
-            motivoConsulta: "",
-            antecedentes: "",
-            examenFisico: "",
-            codigoDiagnostico: "",
-            nombreDiagnostico: "",
-            tratamiento: "",
-            recomendaciones: "",
-            cups: [],
-            cupsConNombre: [],
-          }));
-        } else {
-          console.error("Error cargando historia clínica:", err);
-          setError("Error al cargar la historia clínica");
-          setLoading(false);
-          return;
-        }
+        const [pacientesRes, motivosRes, cupsRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/pacientes`, config),
+          axios.get(`${API_BASE_URL}/motivos`, config),
+          axios.get(`${API_BASE_URL}/cups`, config),
+        ]);
+
+        setPacientes(pacientesRes.data);
+        setMotivos(motivosRes.data);
+        setCups(cupsRes.data);
+      } catch (error) {
+        console.error("Error cargando datos:", error);
       }
+    };
 
-      try {
-        const cupsRes = await axios.get(`${API_BASE_URL}/cups`, {
+    cargarDatos();
+  }, []);
+
+  const cargarDiagnosticos = async (inputValue) => {
+    if (!inputValue || inputValue.length < 3) return [];
+
+    try {
+      const token = localStorage.getItem("token");
+      const { data } = await axios.get(
+        `${API_BASE_URL}/icd11/buscar`,
+        {
+          params: { termino: inputValue },
           headers: { Authorization: `Bearer ${token}` },
-        });
-        setCupsOpciones(cupsRes.data);
-      } catch (err) {
-        console.error("Error cargando CUPS:", err);
-        setError("Error al cargar los CUPS");
-      } finally {
-        setLoading(false);
-      }
+        }
+      );
+
+      return data.map(item => ({
+        value: item.code,
+        label: `${item.code} - ${item.title}`,
+      }));
+    } catch (error) {
+      console.error("Error cargando diagnósticos ICD-11:", error);
+      return [];
     }
-
-    fetchData();
-  }, [pacienteId]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setDatos((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCupsChange = (selected) => {
-    setDatos((prev) => ({
-      ...prev,
-      cups: selected ? selected.map((opt) => opt.value) : [],
-    }));
+  // Función para buscar ICD-11 manualmente con botón
+  const buscarDiagnosticoICD = async () => {
+    if (!terminoICD.trim()) return;
+    try {
+      setLoadingICD(true);
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        `${API_BASE_URL}/icd11/buscar`,
+        {
+          params: { termino: terminoICD },
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setResultadosICD(res.data);
+    } catch (error) {
+      console.error("Error al buscar diagnóstico ICD-11:", error.message);
+      toast.error("Error al buscar diagnóstico ICD-11");
+    } finally {
+      setLoadingICD(false);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
-    if (!token) return alert("No autorizado");
 
     try {
-      await axios.post(
-        `${API_BASE_URL}/pacientes/${pacienteId}/historia`,
-        datos,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      onGuardar?.(datos);
-      alert("Historia clínica guardada");
+      const token = localStorage.getItem("token");
+      await axios.post(`${API_BASE_URL}/historia-clinica`, datos, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      toast.success("Historia clínica guardada correctamente");
     } catch (error) {
-      console.error("Error guardando historia clínica:", error);
-      alert("Error al guardar la historia clínica");
+      console.error("Error al guardar historia clínica:", error);
+      toast.error("Error al guardar historia clínica");
     }
   };
 
-  const exportarPDF = async () => {
-    const input = formRef.current;
-    if (!input) return;
-
-    const canvas = await html2canvas(input);
-    const imgData = canvas.toDataURL("image/png");
-
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    let yOffset = 20;
-
-    const fechaActual = new Date().toLocaleDateString("es-CO");
-    const nombre = datos.nombrePaciente || "Paciente";
-
-    pdf.setFontSize(18);
-    pdf.text("Historia Clínica", pdfWidth / 2, yOffset, { align: "center" });
-
-    pdf.setFontSize(12);
-    yOffset += 10;
-    pdf.text(`Nombre: ${nombre}`, 15, yOffset);
-    yOffset += 7;
-    pdf.text(`Fecha: ${fechaActual}`, 15, yOffset);
-
-    yOffset += 10;
-    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, "PNG", 0, yOffset, pdfWidth, imgHeight);
-
-    pdf.save(`historia_clinica_${nombre}.pdf`);
-  };
-
-const cargarDiagnosticos = async (inputValue) => {
-  if (!inputValue || inputValue.length < 3) return [];
-
-  try {
-    const token = localStorage.getItem('token');
-    const { data } = await axios.get(
-      `${API_BASE_URL}/icd11/buscar`,
-      {
-        params: { termino: inputValue },
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    );
-    return data.map(item => ({
-      value: item.code,
-      label: `${item.code} - ${item.title}`
-    }));
-  } catch (error) {
-    console.error('Error cargando diagnósticos:', error);
-    return [];
-  }
-};
-
-  if (loading) return <p className="text-center">Cargando...</p>;
-  if (error) return <p className="text-red-500 text-center">{error}</p>;
-
   return (
-    <form
-      onSubmit={handleSubmit}
-      ref={formRef}
-      className="space-y-4 p-4 bg-white rounded shadow-md dark:bg-gray-800"
-    >
-      <label className="block font-medium mb-1 text-gray-700 dark:text-white">
-        Motivo de consulta
-      </label>
-      <select
-        name="motivoConsulta"
-        value={datos.motivoConsulta}
-        onChange={handleChange}
-        required
-        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-      >
-        <option value="">Seleccione un motivo</option>
-        {opcionesMotivoConsulta.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+    <form onSubmit={handleSubmit} className="p-4">
+      <div className="mb-4">
+        <label>Paciente:</label>
+        <Select
+          options={pacientes.map((p) => ({
+            value: p._id,
+            label: `${p.nombre} - ${p.correo}`,
+          }))}
+          onChange={(selected) =>
+            setDatos({ ...datos, pacienteId: selected.value })
+          }
+        />
+      </div>
 
-      <textarea
-        name="antecedentes"
-        placeholder="Antecedentes (diagnósticos previos)"
-        value={datos.antecedentes}
-        onChange={handleChange}
-        rows={3}
-        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-      />
+      <div className="mb-4">
+        <label>Motivo de consulta:</label>
+        <Select
+          options={motivos.map((m) => ({
+            value: m.nombre,
+            label: m.nombre,
+          }))}
+          onChange={(selected) =>
+            setDatos({ ...datos, motivoConsulta: selected.value })
+          }
+        />
+      </div>
 
-      <textarea
-        name="examenFisico"
-        placeholder="Examen físico"
-        value={datos.examenFisico}
-        onChange={handleChange}
-        rows={3}
-        required
-        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-      />
+      <div className="mb-4">
+        <label>Antecedentes:</label>
+        <textarea
+          className="w-full border rounded"
+          value={datos.antecedentes}
+          onChange={(e) =>
+            setDatos({ ...datos, antecedentes: e.target.value })
+          }
+        />
+      </div>
 
-      <div>
-        <label className="block mb-1 font-medium text-gray-700 dark:text-white">
-          Diagnóstico (ICD-11)
-        </label>
+      {/* Campo AsyncSelect original para diagnóstico ICD-11 */}
+      <div className="mb-4">
+        <label>Diagnóstico (ICD-11) - Búsqueda instantánea:</label>
         <AsyncSelect
           cacheOptions
           loadOptions={cargarDiagnosticos}
-          defaultOptions
+          defaultOptions={false}
+          onChange={(selected) =>
+            setDatos((prev) => ({
+              ...prev,
+              codigoDiagnostico: selected?.value || "",
+              nombreDiagnostico: selected?.label?.split(" - ")[1] || "",
+              diagnostico: selected?.label || "", // guardar texto completo
+            }))
+          }
           value={
             datos.codigoDiagnostico
               ? {
@@ -237,72 +175,91 @@ const cargarDiagnosticos = async (inputValue) => {
                 }
               : null
           }
-          onChange={(selected) =>
-            setDatos((prev) => ({
-              ...prev,
-              codigoDiagnostico: selected?.value || "",
-              nombreDiagnostico: selected?.label?.split(" - ")[1] || "",
-            }))
-          }
-          placeholder="Buscar diagnóstico ICD-11..."
-          isClearable
-          className="text-black"
         />
       </div>
 
-      <textarea
-        name="tratamiento"
-        placeholder="Tratamiento"
-        value={datos.tratamiento}
-        onChange={handleChange}
-        rows={3}
-        required
-        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-      />
+      {/* NUEVO: Búsqueda manual con input y botón */}
+      <div className="mb-4 border p-2 rounded">
+        <label className="font-bold mb-2 block">Buscar diagnóstico (ICD-11) manual:</label>
+        <div className="flex gap-2 mb-2">
+          <input
+            type="text"
+            value={terminoICD}
+            onChange={(e) => setTerminoICD(e.target.value)}
+            placeholder="Ej: diabetes, asma, hipertensión..."
+            className="border px-3 py-1 rounded w-full"
+          />
+          <button
+            type="button"
+            onClick={buscarDiagnosticoICD}
+            className="bg-blue-600 text-white px-4 py-1 rounded"
+          >
+            Buscar
+          </button>
+        </div>
 
-      <textarea
-        name="recomendaciones"
-        placeholder="Recomendaciones"
-        value={datos.recomendaciones}
-        onChange={handleChange}
-        rows={3}
-        required
-        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-      />
+        {loadingICD && <p>Buscando diagnósticos...</p>}
 
-      <div>
-        <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-white">
-          Procedimientos (CUPS)
-        </label>
+        <ul className="list-disc ml-6 space-y-1 max-h-40 overflow-y-auto">
+          {resultadosICD.map((item, idx) => (
+            <li
+              key={idx}
+              onClick={() => {
+                setDatos((prev) => ({
+                  ...prev,
+                  diagnostico: `${item.code} - ${item.title}`,
+                  codigoDiagnostico: item.code,
+                  nombreDiagnostico: item.title,
+                }));
+                setResultadosICD([]);
+                setTerminoICD("");
+              }}
+              className="cursor-pointer hover:bg-gray-100 p-1 rounded"
+            >
+              <strong>{item.code}</strong>: {item.title}
+            </li>
+          ))}
+        </ul>
+
+        {/* Mostrar campo diagnóstico manual (solo lectura) */}
+        <input
+          type="text"
+          name="diagnostico"
+          value={datos.diagnostico}
+          readOnly
+          className="border px-3 py-1 rounded w-full mt-2 bg-gray-100"
+          placeholder="Diagnóstico seleccionado"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label>Tratamiento:</label>
+        <textarea
+          className="w-full border rounded"
+          value={datos.tratamiento}
+          onChange={(e) =>
+            setDatos({ ...datos, tratamiento: e.target.value })
+          }
+        />
+      </div>
+
+      <div className="mb-4">
+        <label>Procedimientos (CUPS):</label>
         <Select
           isMulti
-          options={cupsOpciones}
-          value={
-            cupsOpciones.length > 0 && Array.isArray(datos.cups)
-              ? cupsOpciones.filter((opt) => datos.cups.includes(opt.value))
-              : []
+          options={cups}
+          onChange={(selected) =>
+            setDatos({ ...datos, cups: selected.map((s) => s.value) })
           }
-          onChange={handleCupsChange}
-          className="text-black"
-          placeholder="Buscar y seleccionar CUPS..."
         />
       </div>
 
-      <div className="flex gap-4 mt-6">
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-        >
-          Guardar historia clínica
-        </button>
-        <button
-          type="button"
-          onClick={exportarPDF}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-        >
-          Exportar a PDF
-        </button>
-      </div>
+      <button
+        type="submit"
+        className="bg-blue-600 text-white px-4 py-2 rounded"
+      >
+        Guardar historia clínica
+      </button>
     </form>
   );
 }
