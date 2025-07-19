@@ -153,25 +153,21 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     pdf.save(`historia_clinica_${nombre}.pdf`);
   };
 
- const cargarDiagnosticos = async (inputValue) => {
-  if (!inputValue || inputValue.length < 3) return [];
+const cargarDiagnosticos = async (inputValue, callback) => {
+  if (!inputValue || inputValue.length < 3) return;
 
   try {
-    const token = localStorage.getItem("token");
-    const { data } = await axios.get(
-      `${API_BASE_URL}/icd11/buscar`,
-      {
-        params: { query: inputValue }, // ← CAMBIO AQUÍ
-        headers: { Authorization: `Bearer ${token}` }
-      }
+    const response = await axios.get(
+      `https://backend-dashboard-v2.onrender.com/api/icd11/buscar?termino=${encodeURIComponent(inputValue)}`
     );
-    return data.map(item => ({
+    const resultados = response.data.map((item) => ({
+      label: `${item.code} - ${item.title}`,
       value: item.code,
-      label: `${item.code} - ${item.title}`
     }));
+    callback(resultados);
   } catch (error) {
-    console.error('Error cargando diagnósticos:', error);
-    return [];
+    console.error("Error cargando diagnósticos:", error.message);
+    callback([]);
   }
 };
 
