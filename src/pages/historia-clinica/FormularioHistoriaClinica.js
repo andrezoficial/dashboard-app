@@ -153,42 +153,45 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     pdf.save(`historia_clinica_${nombre}.pdf`);
   };
 
-const cargarDiagnosticos = async (inputValue, callback) => {
-  if (!inputValue || inputValue.length < 3) {
-    callback([]);
-    return;
-  }
+  const cargarDiagnosticos = async (inputValue, callback) => {
+    if (!inputValue || inputValue.length < 3) {
+      callback([]);
+      return;
+    }
 
-  try {
-    const response = await axios.get(
-      `https://backend-dashboard-v2.onrender.com/api/icd11/buscar?termino=${encodeURIComponent(inputValue)}`
+    try {
+      const response = await axios.get(
+        `https://backend-dashboard-v2.onrender.com/api/icd11/buscar?termino=${encodeURIComponent(inputValue)}`
+      );
+
+      // Mapea los datos para react-select
+      const resultados = response.data.map((item) => ({
+        label: `${item.code} - ${item.title}`, // Mostrar en dropdown
+        value: item.code,                      // Valor guardado (código)
+        title: item.title,                     // Título guardado separado
+      }));
+
+      callback(resultados);
+    } catch (error) {
+      console.error("Error cargando diagnósticos:", error.message);
+      callback([]);
+    }
+  };
+
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
     );
 
-    // response.data ya tiene [{code, title}]
-    const resultados = response.data.map((item) => ({
-      label: `${item.code} - ${item.title}`, // para mostrar en dropdown
-      value: item.code,                      // valor que guardamos
-    }));
-
-    callback(resultados);
-  } catch (error) {
-    console.error("Error cargando diagnósticos:", error.message);
-    callback([]);
-  }
-};
-
-  if (loading) return (
-    <div className="flex justify-center items-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-    </div>
-  );
-  
-  if (error) return (
-    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
-      <p className="font-bold">Error</p>
-      <p>{error}</p>
-    </div>
-  );
+  if (error)
+    return (
+      <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+        <p className="font-bold">Error</p>
+        <p>{error}</p>
+      </div>
+    );
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -202,11 +205,7 @@ const cargarDiagnosticos = async (inputValue, callback) => {
         </div>
 
         {/* Formulario */}
-        <form
-          onSubmit={handleSubmit}
-          ref={formRef}
-          className="p-6 space-y-6"
-        >
+        <form onSubmit={handleSubmit} ref={formRef} className="p-6 space-y-6">
           {/* Motivo de consulta */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -272,6 +271,7 @@ const cargarDiagnosticos = async (inputValue, callback) => {
                   ? {
                       value: datos.codigoDiagnostico,
                       label: `${datos.codigoDiagnostico} - ${datos.nombreDiagnostico}`,
+                      title: datos.nombreDiagnostico,
                     }
                   : null
               }
@@ -279,7 +279,7 @@ const cargarDiagnosticos = async (inputValue, callback) => {
                 setDatos((prev) => ({
                   ...prev,
                   codigoDiagnostico: selected?.value || "",
-                  nombreDiagnostico: selected?.label?.split(" - ")[1] || "",
+                  nombreDiagnostico: selected?.title || "",
                 }))
               }
               placeholder="Buscar diagnóstico ICD-11..."
@@ -374,7 +374,8 @@ const cargarDiagnosticos = async (inputValue, callback) => {
         .react-select-container .react-select__menu {
           z-index: 20;
           border-radius: 0.5rem;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
         .react-select-container .react-select__multi-value {
           background-color: #e0f2fe;
