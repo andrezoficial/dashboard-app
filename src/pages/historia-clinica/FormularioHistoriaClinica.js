@@ -153,156 +153,239 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     pdf.save(`historia_clinica_${nombre}.pdf`);
   };
 
-  const cargarDiagnosticos = async (inputValue) => {
-    if (!inputValue || inputValue.length < 3) return [];
+ const cargarDiagnosticos = async (inputValue) => {
+  if (!inputValue || inputValue.length < 3) return [];
 
-    try {
-      const token = localStorage.getItem("token");
-      const { data } = await axios.get(
-        `${API_BASE_URL}/icd11/buscar`,
-        {
-          params: { termino: inputValue }, // <-- CORRECTO: parámetro "termino"
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-      return data.map(item => ({
-        value: item.code,
-        label: `${item.code} - ${item.title}`
-      }));
-    } catch (error) {
-      console.error('Error cargando diagnósticos:', error);
-      return [];
-    }
-  };
+  try {
+    const token = localStorage.getItem("token");
+    const { data } = await axios.get(
+      `${API_BASE_URL}/icd11/buscar`,
+      {
+        params: { query: inputValue }, // ← CAMBIO AQUÍ
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    return data.map(item => ({
+      value: item.code,
+      label: `${item.code} - ${item.title}`
+    }));
+  } catch (error) {
+    console.error('Error cargando diagnósticos:', error);
+    return [];
+  }
+};
 
-  if (loading) return <p className="text-center">Cargando...</p>;
-  if (error) return <p className="text-red-500 text-center">{error}</p>;
+  if (loading) return (
+    <div className="flex justify-center items-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+      <p className="font-bold">Error</p>
+      <p>{error}</p>
+    </div>
+  );
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      ref={formRef}
-      className="space-y-4 p-4 bg-white rounded shadow-md dark:bg-gray-800"
-    >
-      <label className="block font-medium mb-1 text-gray-700 dark:text-white">
-        Motivo de consulta
-      </label>
-      <select
-        name="motivoConsulta"
-        value={datos.motivoConsulta}
-        onChange={handleChange}
-        required
-        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-      >
-        <option value="">Seleccione un motivo</option>
-        {opcionesMotivoConsulta.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden dark:bg-gray-800">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white">
+          <h1 className="text-2xl font-bold">Historia Clínica</h1>
+          {datos.nombrePaciente && (
+            <p className="text-blue-100">Paciente: {datos.nombrePaciente}</p>
+          )}
+        </div>
 
-      <textarea
-        name="antecedentes"
-        placeholder="Antecedentes (diagnósticos previos)"
-        value={datos.antecedentes}
-        onChange={handleChange}
-        rows={3}
-        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-      />
-
-      <textarea
-        name="examenFisico"
-        placeholder="Examen físico"
-        value={datos.examenFisico}
-        onChange={handleChange}
-        rows={3}
-        required
-        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-      />
-
-      <div>
-        <label className="block mb-1 font-medium text-gray-700 dark:text-white">
-          Diagnóstico (ICD-11)
-        </label>
-        <AsyncSelect
-          cacheOptions
-          loadOptions={cargarDiagnosticos}
-          defaultOptions
-          value={
-            datos.codigoDiagnostico
-              ? {
-                  value: datos.codigoDiagnostico,
-                  label: `${datos.codigoDiagnostico} - ${datos.nombreDiagnostico}`,
-                }
-              : null
-          }
-          onChange={(selected) =>
-            setDatos((prev) => ({
-              ...prev,
-              codigoDiagnostico: selected?.value || "",
-              nombreDiagnostico: selected?.label?.split(" - ")[1] || "",
-            }))
-          }
-          placeholder="Buscar diagnóstico ICD-11..."
-          isClearable
-          className="text-black"
-        />
-      </div>
-
-      <textarea
-        name="tratamiento"
-        placeholder="Tratamiento"
-        value={datos.tratamiento}
-        onChange={handleChange}
-        rows={3}
-        required
-        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-      />
-
-      <textarea
-        name="recomendaciones"
-        placeholder="Recomendaciones"
-        value={datos.recomendaciones}
-        onChange={handleChange}
-        rows={3}
-        required
-        className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-      />
-
-      <div>
-        <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-white">
-          Procedimientos (CUPS)
-        </label>
-        <Select
-          isMulti
-          options={cupsOpciones}
-          value={
-            cupsOpciones.length > 0 && Array.isArray(datos.cups)
-              ? cupsOpciones.filter((opt) => datos.cups.includes(opt.value))
-              : []
-          }
-          onChange={handleCupsChange}
-          className="text-black"
-          placeholder="Buscar y seleccionar CUPS..."
-        />
-      </div>
-
-      <div className="flex gap-4 mt-6">
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+        {/* Formulario */}
+        <form
+          onSubmit={handleSubmit}
+          ref={formRef}
+          className="p-6 space-y-6"
         >
-          Guardar historia clínica
-        </button>
-        <button
-          type="button"
-          onClick={exportarPDF}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-        >
-          Exportar a PDF
-        </button>
+          {/* Motivo de consulta */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Motivo de consulta
+            </label>
+            <select
+              name="motivoConsulta"
+              value={datos.motivoConsulta}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            >
+              {opcionesMotivoConsulta.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Antecedentes */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Antecedentes (diagnósticos previos)
+            </label>
+            <textarea
+              name="antecedentes"
+              value={datos.antecedentes}
+              onChange={handleChange}
+              rows={3}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              placeholder="Ingrese los antecedentes del paciente..."
+            />
+          </div>
+
+          {/* Examen físico */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Examen físico
+            </label>
+            <textarea
+              name="examenFisico"
+              value={datos.examenFisico}
+              onChange={handleChange}
+              rows={3}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              placeholder="Describa el examen físico realizado..."
+            />
+          </div>
+
+          {/* Diagnóstico ICD-11 */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Diagnóstico (ICD-11)
+            </label>
+            <AsyncSelect
+              cacheOptions
+              loadOptions={cargarDiagnosticos}
+              defaultOptions
+              value={
+                datos.codigoDiagnostico
+                  ? {
+                      value: datos.codigoDiagnostico,
+                      label: `${datos.codigoDiagnostico} - ${datos.nombreDiagnostico}`,
+                    }
+                  : null
+              }
+              onChange={(selected) =>
+                setDatos((prev) => ({
+                  ...prev,
+                  codigoDiagnostico: selected?.value || "",
+                  nombreDiagnostico: selected?.label?.split(" - ")[1] || "",
+                }))
+              }
+              placeholder="Buscar diagnóstico ICD-11..."
+              isClearable
+              className="react-select-container"
+              classNamePrefix="react-select"
+            />
+          </div>
+
+          {/* Tratamiento */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Tratamiento
+            </label>
+            <textarea
+              name="tratamiento"
+              value={datos.tratamiento}
+              onChange={handleChange}
+              rows={3}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              placeholder="Describa el tratamiento indicado..."
+            />
+          </div>
+
+          {/* Recomendaciones */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Recomendaciones
+            </label>
+            <textarea
+              name="recomendaciones"
+              value={datos.recomendaciones}
+              onChange={handleChange}
+              rows={3}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              placeholder="Ingrese las recomendaciones para el paciente..."
+            />
+          </div>
+
+          {/* Procedimientos CUPS */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Procedimientos (CUPS)
+            </label>
+            <Select
+              isMulti
+              options={cupsOpciones}
+              value={
+                cupsOpciones.length > 0 && Array.isArray(datos.cups)
+                  ? cupsOpciones.filter((opt) => datos.cups.includes(opt.value))
+                  : []
+              }
+              onChange={handleCupsChange}
+              className="react-select-container"
+              classNamePrefix="react-select"
+              placeholder="Buscar y seleccionar CUPS..."
+            />
+          </div>
+
+          {/* Botones */}
+          <div className="flex flex-wrap gap-4 pt-6">
+            <button
+              type="submit"
+              className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            >
+              Guardar historia clínica
+            </button>
+            <button
+              type="button"
+              onClick={exportarPDF}
+              className="px-6 py-3 bg-green-600 text-white font-medium rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+            >
+              Exportar a PDF
+            </button>
+          </div>
+        </form>
       </div>
-    </form>
+
+      {/* Estilos para react-select */}
+      <style jsx global>{`
+        .react-select-container .react-select__control {
+          border: 1px solid #d1d5db;
+          min-height: 42px;
+          border-radius: 0.5rem;
+        }
+        .react-select-container .react-select__control--is-focused {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .react-select-container .react-select__menu {
+          z-index: 20;
+          border-radius: 0.5rem;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .react-select-container .react-select__multi-value {
+          background-color: #e0f2fe;
+          border-radius: 0.25rem;
+        }
+        .react-select-container .react-select__multi-value__label {
+          color: #0369a1;
+          font-size: 0.875rem;
+        }
+        .react-select-container .react-select__placeholder {
+          color: #9ca3af;
+        }
+      `}</style>
+    </div>
   );
 }
