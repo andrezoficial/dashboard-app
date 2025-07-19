@@ -154,16 +154,22 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
   };
 
 const cargarDiagnosticos = async (inputValue, callback) => {
-  if (!inputValue || inputValue.length < 3) return;
+  if (!inputValue || inputValue.length < 3) {
+    callback([]);
+    return;
+  }
 
   try {
     const response = await axios.get(
       `https://backend-dashboard-v2.onrender.com/api/icd11/buscar?termino=${encodeURIComponent(inputValue)}`
     );
+
+    // response.data ya tiene [{code, title}]
     const resultados = response.data.map((item) => ({
-      label: `${item.code} - ${item.title}`,
-      value: item.code,
+      label: `${item.code} - ${item.title}`, // para mostrar en dropdown
+      value: item.code,                      // valor que guardamos
     }));
+
     callback(resultados);
   } catch (error) {
     console.error("Error cargando diagnósticos:", error.message);
