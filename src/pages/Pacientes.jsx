@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, ToastContainer } from "react-toastify";
-import { Link } from "react-router-dom";  // <-- Import agregado
+import { Link } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
 import GraficoCitas from "../components/GraficoCitas";
 
@@ -18,6 +18,12 @@ export default function Pacientes() {
     correo: "",
     telefono: "",
     eps: "",
+    fechaNacimiento: "",
+    direccion: "",
+    estadoCivil: "Soltero(a)",
+    ocupacion: "",
+    contactoEmergenciaNombre: "",
+    contactoEmergenciaTelefono: "",
   });
   const [editId, setEditId] = useState(null);
 
@@ -47,6 +53,12 @@ export default function Pacientes() {
       correo: "",
       telefono: "",
       eps: "",
+      fechaNacimiento: "",
+      direccion: "",
+      estadoCivil: "Soltero(a)",
+      ocupacion: "",
+      contactoEmergenciaNombre: "",
+      contactoEmergenciaTelefono: "",
     });
     setEditId(null);
   };
@@ -115,9 +127,9 @@ export default function Pacientes() {
       <h1 className="text-xl sm:text-2xl font-bold mb-4">Pacientes</h1>
       <GraficoCitas />
       <div className="mb-6 p-4 border rounded bg-white dark:bg-gray-800 dark:border-gray-700">
-  <h2 className="text-lg font-semibold mb-2 text-center">Estadísticas de citas</h2>
-  <GraficoCitas />
-</div>
+        <h2 className="text-lg font-semibold mb-2 text-center">Estadísticas de citas</h2>
+        <GraficoCitas />
+      </div>
 
       <button
         onClick={() => {
@@ -139,12 +151,18 @@ export default function Pacientes() {
             transition={{ duration: 0.3 }}
             className="mb-6 p-4 border rounded bg-white dark:bg-gray-800 dark:border-gray-700 grid gap-4 grid-cols-1 sm:grid-cols-2"
           >
+            {/* Campos existentes */}
             {[
               { label: "Nombre Completo", name: "nombreCompleto", type: "text" },
               { label: "Número de Documento", name: "numeroDocumento", type: "text" },
               { label: "Correo", name: "correo", type: "email" },
               { label: "Teléfono", name: "telefono", type: "text" },
               { label: "EPS", name: "eps", type: "text" },
+              { label: "Fecha de Nacimiento", name: "fechaNacimiento", type: "date" },
+              { label: "Dirección", name: "direccion", type: "text" },
+              { label: "Ocupación", name: "ocupacion", type: "text" },
+              { label: "Contacto de Emergencia - Nombre", name: "contactoEmergenciaNombre", type: "text" },
+              { label: "Contacto de Emergencia - Teléfono", name: "contactoEmergenciaTelefono", type: "text" },
             ].map(({ label, name, type }) => (
               <div key={name}>
                 <label className="block font-semibold mb-1">{label}</label>
@@ -153,12 +171,13 @@ export default function Pacientes() {
                   name={name}
                   value={formData[name]}
                   onChange={handleChange}
-                  required
+                  required={name !== "ocupacion" && name !== "direccion" && !name.startsWith("contacto")}
                   className="w-full border px-3 py-2 rounded bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                 />
               </div>
             ))}
 
+            {/* Selects */}
             <div>
               <label className="block font-semibold mb-1">Tipo de Documento</label>
               <select
@@ -189,6 +208,24 @@ export default function Pacientes() {
               </select>
             </div>
 
+            <div>
+              <label className="block font-semibold mb-1">Estado Civil</label>
+              <select
+                name="estadoCivil"
+                value={formData.estadoCivil}
+                onChange={handleChange}
+                required
+                className="w-full border px-3 py-2 rounded bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+              >
+                <option value="Soltero(a)">Soltero(a)</option>
+                <option value="Casado(a)">Casado(a)</option>
+                <option value="Unión libre">Unión libre</option>
+                <option value="Divorciado(a)">Divorciado(a)</option>
+                <option value="Viudo(a)">Viudo(a)</option>
+              </select>
+            </div>
+
+            {/* Botones */}
             <div className="col-span-full flex flex-col sm:flex-row gap-2 mt-2">
               <button
                 type="submit"
@@ -208,6 +245,7 @@ export default function Pacientes() {
         )}
       </AnimatePresence>
 
+      {/* Lista responsive para móviles */}
       <div className="grid gap-4 sm:hidden">
         {pacientes.length === 0 ? (
           <p className="text-center text-gray-500 dark:text-gray-400">No hay pacientes.</p>
@@ -226,6 +264,11 @@ export default function Pacientes() {
               <p><strong>Teléfono:</strong> {p.telefono}</p>
               <p><strong>EPS:</strong> {p.eps}</p>
               <p><strong>Sexo:</strong> {p.sexo}</p>
+              <p><strong>Fecha de nacimiento:</strong> {p.fechaNacimiento}</p>
+              <p><strong>Dirección:</strong> {p.direccion}</p>
+              <p><strong>Estado Civil:</strong> {p.estadoCivil}</p>
+              <p><strong>Ocupación:</strong> {p.ocupacion}</p>
+              <p><strong>Contacto emergencia:</strong> {p.contactoEmergenciaNombre} - {p.contactoEmergenciaTelefono}</p>
               <div className="flex gap-4 mt-2">
                 <button onClick={() => handleEdit(p)} className="text-blue-600 dark:text-blue-400 hover:underline">
                   Editar
@@ -233,7 +276,6 @@ export default function Pacientes() {
                 <button onClick={() => handleDelete(p._id)} className="text-red-600 hover:underline">
                   Eliminar
                 </button>
-                {/* Aquí se corrige la ruta agregando /dashboard */}
                 <Link to={`/dashboard/pacientes/${p._id}/historia-clinica`} className="text-green-600 hover:underline">
                   Historia Clínica
                 </Link>
@@ -243,8 +285,9 @@ export default function Pacientes() {
         )}
       </div>
 
+      {/* Tabla para escritorio */}
       <div className="hidden sm:block overflow-x-auto rounded border bg-white dark:bg-gray-900 dark:border-gray-700 mt-4">
-        <table className="min-w-[720px] w-full text-sm">
+        <table className="min-w-[920px] w-full text-sm">
           <thead className="bg-gray-100 dark:bg-gray-700 text-left text-gray-900 dark:text-gray-100">
             <tr>
               {[
@@ -255,6 +298,11 @@ export default function Pacientes() {
                 "Correo",
                 "Teléfono",
                 "EPS",
+                "Fecha Nacimiento",
+                "Dirección",
+                "Estado Civil",
+                "Ocupación",
+                "Contacto Emergencia",
                 "Acciones",
               ].map((title) => (
                 <th key={title} className="py-2 px-4 border-b dark:border-gray-700 font-medium">
@@ -279,6 +327,13 @@ export default function Pacientes() {
                 <td className="py-2 px-4 border-b dark:border-gray-700">{p.correo}</td>
                 <td className="py-2 px-4 border-b dark:border-gray-700">{p.telefono}</td>
                 <td className="py-2 px-4 border-b dark:border-gray-700">{p.eps}</td>
+                <td className="py-2 px-4 border-b dark:border-gray-700">{p.fechaNacimiento}</td>
+                <td className="py-2 px-4 border-b dark:border-gray-700">{p.direccion}</td>
+                <td className="py-2 px-4 border-b dark:border-gray-700">{p.estadoCivil}</td>
+                <td className="py-2 px-4 border-b dark:border-gray-700">{p.ocupacion}</td>
+                <td className="py-2 px-4 border-b dark:border-gray-700">
+                  {p.contactoEmergenciaNombre} - {p.contactoEmergenciaTelefono}
+                </td>
                 <td className="py-2 px-4 border-b dark:border-gray-700 whitespace-nowrap flex gap-2">
                   <button onClick={() => handleEdit(p)} className="text-blue-600 dark:text-blue-400 hover:underline">
                     Editar
@@ -286,7 +341,6 @@ export default function Pacientes() {
                   <button onClick={() => handleDelete(p._id)} className="text-red-600 hover:underline">
                     Eliminar
                   </button>
-                  {/* Aquí también corregimos la ruta agregando /dashboard */}
                   <Link to={`/dashboard/pacientes/${p._id}/historia-clinica`} className="text-green-600 hover:underline">
                     Historia Clínica
                   </Link>
