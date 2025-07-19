@@ -123,35 +123,42 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     }
   };
 
-  const exportarPDF = async () => {
-    const input = formRef.current;
-    if (!input) return;
+ const exportarPDF = async () => {
+  const input = formRef.current;
+  if (!input) return;
 
-    const canvas = await html2canvas(input);
-    const imgData = canvas.toDataURL("image/png");
+  const canvas = await html2canvas(input);
+  const imgData = canvas.toDataURL("image/png");
 
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    let yOffset = 20;
+  const pdf = new jsPDF("p", "mm", "a4");
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  let yOffset = 20;
 
-    const fechaActual = new Date().toLocaleDateString("es-CO");
-    const nombre = datos.nombrePaciente || "Paciente";
+  const fechaActual = new Date().toLocaleDateString("es-CO");
+  const nombre = datos.nombrePaciente || "Paciente";
 
-    pdf.setFontSize(18);
-    pdf.text("Historia Clínica", pdfWidth / 2, yOffset, { align: "center" });
+  // Título
+  pdf.setFontSize(18);
+  pdf.text("Historia Clínica", pdfWidth / 2, yOffset, { align: "center" });
 
-    pdf.setFontSize(12);
-    yOffset += 10;
-    pdf.text(`Nombre: ${nombre}`, 15, yOffset);
-    yOffset += 7;
-    pdf.text(`Fecha: ${fechaActual}`, 15, yOffset);
+  // Nombre paciente y fecha justo debajo del título
+  pdf.setFontSize(12);
+  yOffset += 10;
+  pdf.text(`Nombre del paciente: ${nombre}`, 15, yOffset);
+  yOffset += 7;
+  pdf.text(`Fecha: ${fechaActual}`, 15, yOffset);
 
-    yOffset += 10;
-    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, "PNG", 0, yOffset, pdfWidth, imgHeight);
+  // Dejar un espacio antes de la imagen
+  yOffset += 10;
 
-    pdf.save(`historia_clinica_${nombre}.pdf`);
-  };
+  // Calcular la altura proporcional para la imagen
+  const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+  pdf.addImage(imgData, "PNG", 0, yOffset, pdfWidth, imgHeight);
+
+  // Guardar PDF
+  pdf.save(`historia_clinica_${nombre.replace(/\s+/g, "_").toLowerCase()}.pdf`);
+};
 
   const cargarDiagnosticos = async (inputValue, callback) => {
     if (!inputValue || inputValue.length < 3) {
