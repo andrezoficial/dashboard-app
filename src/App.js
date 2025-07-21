@@ -24,6 +24,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import AdminRoute from "./components/AdminRoute";
+import VerHistoriaClinica from "./pages/historia-clinica/VerHistoriaClinica";
 
 export default function App() {
   const { isAuthenticated } = useAuth();
@@ -79,9 +80,9 @@ export default function App() {
           <Route path="pacientes" element={<Pacientes />} />
 
           <Route
-            path="pacientes/:id/historia-clinica"
-            element={<FormularioHistoriaClinica />}
-          />
+  path="pacientes/:id/historia-clinica/ver"
+  element={<VerHistoriaClinica />}
+/>
 
           <Route
             path="citas"
