@@ -82,10 +82,7 @@ export default function App() {
           <Route path="pacientes" element={<Pacientes />} />
 
           {/* Ver historia clínica */}
-          <Route
-            path="pacientes/:id/historia-clinica/ver"
-            element={<VerHistoriaClinica />}
-          />
+          <Route path="pacientes/:id/ver-historia" element={<VerHistoriaClinica />} />
 
           {/* Citas (solo admin) */}
           <Route

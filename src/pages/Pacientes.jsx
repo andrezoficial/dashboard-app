@@ -341,10 +341,7 @@ export default function Pacientes() {
                   <button onClick={() => handleDelete(p._id)} className="text-red-600 hover:underline">
                     Eliminar
                   </button>
-                  <Link to={`/dashboard/pacientes/${p._id}/ver-historia`} className="text-green-600 hover:underline">
-  Historia Clínica
-</Link>
-
+                  <Link to={`/dashboard/pacientes/${p._id}/ver-historia`}>Historia Clínica</Link>
                 </td>
               </motion.tr>
             ))}
