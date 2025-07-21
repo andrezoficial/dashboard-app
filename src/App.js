@@ -6,6 +6,9 @@ import {
   Navigate,
 } from "react-router-dom";
 
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import LoginPage from "./pages/LoginPage";
 import LandingPage from "./pages/LandingPage";
 import DashboardLayout from "./components/DashboardLayout";
@@ -16,15 +19,11 @@ import Citas from "./pages/Citas";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
 import ChatPage from "./pages/ChatPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
-
-
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import VerHistoriaClinica from "./pages/historia-clinica/VerHistoriaClinica";
 
 import { useAuth } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import AdminRoute from "./components/AdminRoute";
-import VerHistoriaClinica from "./pages/historia-clinica/VerHistoriaClinica";
 
 export default function App() {
   const { isAuthenticated } = useAuth();
@@ -54,10 +53,10 @@ export default function App() {
           }
         />
 
-        {/* Recuperar contraseña */}
+        {/* Recuperación de contraseña */}
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-        {/* Área privada con dashboard y rutas protegidas */}
+        {/* Rutas protegidas con layout de Dashboard */}
         <Route
           path="/dashboard"
           element={
@@ -66,8 +65,10 @@ export default function App() {
             </PrivateRoute>
           }
         >
+          {/* Inicio del dashboard */}
           <Route index element={<DashboardPage />} />
 
+          {/* Usuarios (solo admin) */}
           <Route
             path="usuarios"
             element={
@@ -77,13 +78,16 @@ export default function App() {
             }
           />
 
+          {/* Pacientes */}
           <Route path="pacientes" element={<Pacientes />} />
 
+          {/* Ver historia clínica */}
           <Route
-  path="pacientes/:id/historia-clinica/ver"
-  element={<VerHistoriaClinica />}
-/>
+            path="pacientes/:id/historia-clinica/ver"
+            element={<VerHistoriaClinica />}
+          />
 
+          {/* Citas (solo admin) */}
           <Route
             path="citas"
             element={
@@ -93,6 +97,7 @@ export default function App() {
             }
           />
 
+          {/* Configuración (solo admin) */}
           <Route
             path="configuracion"
             element={
@@ -102,13 +107,13 @@ export default function App() {
             }
           />
 
+          {/* Chat */}
           <Route path="chat" element={<ChatPage />} />
         </Route>
 
-        {/* Ruta fallback: redirige a landing si no existe la ruta */}
+        {/* Ruta por defecto si no coincide ninguna */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
 }
-
