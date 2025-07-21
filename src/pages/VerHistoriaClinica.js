@@ -1,4 +1,3 @@
-// pages/historia-clinica/verhistoriaclinica.js
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
@@ -7,6 +6,26 @@ export default function VerHistoriaClinica() {
   const { id: pacienteId } = useParams();
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState(null);
+  const [editando, setEditando] = useState(false);
+  const [formData, setFormData] = useState({
+    motivoConsulta: "",
+    antecedentes: "",
+    examenFisico: "",
+    diagnosticos: { presuntivos: [], definitivos: [], diferenciales: [] },
+    tratamiento: "",
+    recomendaciones: "",
+    cups: [],
+    sexo: "",
+    fechaNacimiento: "",
+    identificacion: { tipo: "", numero: "" },
+    estadoCivil: "",
+    ocupacion: "",
+    direccion: "",
+    telefono: "",
+    correo: "",
+    eps: "",
+    contactoEmergencia: { nombre: "", relacion: "", telefono: "" },
+  });
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -19,6 +38,26 @@ export default function VerHistoriaClinica() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setDatos(res.data);
+
+        setFormData({
+          motivoConsulta: res.data.motivoConsulta?.descripcion || "",
+          antecedentes: JSON.stringify(res.data.antecedentes) || "",
+          examenFisico: JSON.stringify(res.data.examenFisico) || "",
+          diagnosticos: res.data.diagnosticos || { presuntivos: [], definitivos: [], diferenciales: [] },
+          tratamiento: JSON.stringify(res.data.tratamiento) || "",
+          recomendaciones: JSON.stringify(res.data.recomendaciones) || "",
+          cups: res.data.tratamiento?.procedimientos || [],
+          sexo: res.data.sexo || "",
+          fechaNacimiento: res.data.fechaNacimiento ? new Date(res.data.fechaNacimiento).toISOString().substr(0,10) : "",
+          identificacion: res.data.identificacion || { tipo: "", numero: "" },
+          estadoCivil: res.data.estadoCivil || "",
+          ocupacion: res.data.ocupacion || "",
+          direccion: res.data.direccion || "",
+          telefono: res.data.telefono || "",
+          correo: res.data.correo || "",
+          eps: res.data.eps || "",
+          contactoEmergencia: res.data.contactoEmergencia || { nombre: "", relacion: "", telefono: "" },
+        });
       } catch (err) {
         setError("Error al cargar la historia clínica");
       }
@@ -28,40 +67,316 @@ export default function VerHistoriaClinica() {
   if (error) return <div className="text-red-500 text-center mt-8">{error}</div>;
   if (!datos) return <div className="text-center mt-8">Cargando...</div>;
 
-  const dp = datos.datosPaciente || {};
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name.startsWith("identificacion.")) {
+      setFormData((prev) => ({
+        ...prev,
+        identificacion: { ...prev.identificacion, [name.split(".")[1]]: value },
+      }));
+    } else if (name.startsWith("contactoEmergencia.")) {
+      setFormData((prev) => ({
+        ...prev,
+        contactoEmergencia: { ...prev.contactoEmergencia, [name.split(".")[1]]: value },
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem("token");
+    if (!token) return setError("No autorizado");
+
+    try {
+      const antecedentesParsed = formData.antecedentes ? JSON.parse(formData.antecedentes) : {};
+      const examenFisicoParsed = formData.examenFisico ? JSON.parse(formData.examenFisico) : {};
+      const tratamientoParsed = formData.tratamiento ? JSON.parse(formData.tratamiento) : {};
+      const recomendacionesParsed = formData.recomendaciones ? JSON.parse(formData.recomendaciones) : {};
+
+      const body = {
+        motivoConsulta: { descripcion: formData.motivoConsulta },
+        antecedentes: antecedentesParsed,
+        examenFisico: examenFisicoParsed,
+        diagnosticos: formData.diagnosticos,
+        tratamiento: tratamientoParsed,
+        recomendaciones: recomendacionesParsed,
+        cups: formData.cups,
+        sexo: formData.sexo,
+        fechaNacimiento: formData.fechaNacimiento,
+        identificacion: formData.identificacion,
+        estadoCivil: formData.estadoCivil,
+        ocupacion: formData.ocupacion,
+        direccion: formData.direccion,
+        telefono: formData.telefono,
+        correo: formData.correo,
+        eps: formData.eps,
+        contactoEmergencia: formData.contactoEmergencia,
+      };
+
+      await axios.put(
+        `https://backend-dashboard-v2.onrender.com/api/pacientes/${pacienteId}/historia`,
+        body,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setError(null);
+      setEditando(false);
+
+      const res = await axios.get(
+        `https://backend-dashboard-v2.onrender.com/api/pacientes/${pacienteId}/historia`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setDatos(res.data);
+    } catch (err) {
+      setError("Error al guardar la historia clínica. Verifique los datos ingresados.");
+    }
+  };
+
+  if (!editando) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-md mt-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-blue-700">
+            Historia Clínica de {datos.datosPaciente?.nombreCompleto || "Paciente"}
+          </h1>
+          <div>
+            <button
+              onClick={() => setEditando(true)}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg mr-2"
+            >
+              ✏️ Editar
+            </button>
+            <Link
+              to={`/historia-clinica/${pacienteId}/formulario`}
+              className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg"
+            >
+              📝 Formulario clínico
+            </Link>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 text-sm text-gray-700">
+          <p><strong>Motivo de consulta:</strong> {datos.motivoConsulta?.descripcion || "-"}</p>
+          <p><strong>Antecedentes:</strong> {JSON.stringify(datos.antecedentes) || "-"}</p>
+          <p><strong>Examen físico:</strong> {JSON.stringify(datos.examenFisico) || "-"}</p>
+          <p><strong>Diagnóstico:</strong> {datos.diagnosticos?.definitivos?.map(d => d.descripcion).join(", ") || "-"}</p>
+          <p><strong>Tratamiento:</strong> {JSON.stringify(datos.tratamiento) || "-"}</p>
+          <p><strong>Recomendaciones:</strong> {JSON.stringify(datos.recomendaciones) || "-"}</p>
+          <div>
+            <strong>CUPS:</strong>
+            <ul className="list-disc ml-6 mt-1">
+              {datos.tratamiento?.procedimientos?.length ? (
+                datos.tratamiento.procedimientos.map((c, i) => (
+                  <li key={i}>{c.codigoCUPS} - {c.nombre}</li>
+                ))
+              ) : (
+                <li>No hay procedimientos registrados</li>
+              )}
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-md mt-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-blue-700">Historia Clínica de {dp.nombreCompleto || "Paciente"}</h1>
-        <Link
-          to={`/historia-clinica/${pacienteId}/formulario`}
-          className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg"
-        >
-          📝 Formulario clínico
-        </Link>
-      </div>
+      <h1 className="text-2xl font-bold text-blue-700 mb-6">
+        Editar Historia Clínica de {datos.datosPaciente?.nombreCompleto || "Paciente"}
+      </h1>
 
-      <div className="grid grid-cols-1 gap-4 text-sm text-gray-700">
-        <p><strong>Motivo de consulta:</strong> {datos.motivoConsulta || "-"}</p>
-        <p><strong>Antecedentes:</strong> {datos.antecedentes || "-"}</p>
-        <p><strong>Examen físico:</strong> {datos.examenFisico || "-"}</p>
-        <p><strong>Diagnóstico:</strong> {datos.nombreDiagnostico || "-"}</p>
-        <p><strong>Tratamiento:</strong> {datos.tratamiento || "-"}</p>
-        <p><strong>Recomendaciones:</strong> {datos.recomendaciones || "-"}</p>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 text-gray-700">
         <div>
-          <strong>CUPS:</strong>
-          <ul className="list-disc ml-6 mt-1">
-            {datos.cupsConNombre?.length ? (
-              datos.cupsConNombre.map((c, i) => (
-                <li key={i}>{c.codigo} - {c.nombre}</li>
-              ))
-            ) : (
-              <li>No hay procedimientos registrados</li>
-            )}
-          </ul>
+          <label className="font-semibold">Motivo de consulta</label>
+          <textarea
+            name="motivoConsulta"
+            value={formData.motivoConsulta}
+            onChange={handleChange}
+            required
+            className="w-full border rounded px-3 py-2"
+          />
         </div>
-      </div>
+
+        <div>
+          <label className="font-semibold">Sexo</label>
+          <select
+            name="sexo"
+            value={formData.sexo}
+            onChange={handleChange}
+            required
+            className="w-full border rounded px-3 py-2"
+          >
+            <option value="">Seleccione</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Femenino">Femenino</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="font-semibold">Fecha de nacimiento</label>
+          <input
+            type="date"
+            name="fechaNacimiento"
+            value={formData.fechaNacimiento}
+            onChange={handleChange}
+            required
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="font-semibold">Tipo de documento</label>
+            <select
+              name="identificacion.tipo"
+              value={formData.identificacion.tipo}
+              onChange={handleChange}
+              required
+              className="w-full border rounded px-3 py-2"
+            >
+              <option value="">Seleccione</option>
+              <option value="cc">CC</option>
+              <option value="ti">TI</option>
+              <option value="ce">CE</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="font-semibold">Número de documento</label>
+            <input
+              type="text"
+              name="identificacion.numero"
+              value={formData.identificacion.numero}
+              onChange={handleChange}
+              required
+              className="w-full border rounded px-3 py-2"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="font-semibold">Estado Civil</label>
+          <input
+            type="text"
+            name="estadoCivil"
+            value={formData.estadoCivil}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label className="font-semibold">Ocupación</label>
+          <input
+            type="text"
+            name="ocupacion"
+            value={formData.ocupacion}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label className="font-semibold">Dirección</label>
+          <input
+            type="text"
+            name="direccion"
+            value={formData.direccion}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label className="font-semibold">Teléfono</label>
+          <input
+            type="text"
+            name="telefono"
+            value={formData.telefono}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label className="font-semibold">Correo</label>
+          <input
+            type="email"
+            name="correo"
+            value={formData.correo}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label className="font-semibold">EPS</label>
+          <input
+            type="text"
+            name="eps"
+            value={formData.eps}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label className="font-semibold">Contacto de Emergencia - Nombre</label>
+          <input
+            type="text"
+            name="contactoEmergencia.nombre"
+            value={formData.contactoEmergencia.nombre}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label className="font-semibold">Contacto de Emergencia - Relación</label>
+          <input
+            type="text"
+            name="contactoEmergencia.relacion"
+            value={formData.contactoEmergencia.relacion}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label className="font-semibold">Contacto de Emergencia - Teléfono</label>
+          <input
+            type="text"
+            name="contactoEmergencia.telefono"
+            value={formData.contactoEmergencia.telefono}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
+
+        {/* Aquí puedes agregar más campos según necesites */}
+
+        <div className="flex gap-4 mt-4">
+          <button
+            type="submit"
+            className="bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-lg"
+          >
+            Guardar
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditando(false)}
+            className="bg-gray-400 hover:bg-gray-500 text-white py-2 px-6 rounded-lg"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
