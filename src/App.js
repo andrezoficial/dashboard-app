@@ -24,7 +24,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import AdminRoute from "./components/AdminRoute";
-import VerHistoriaClinica from "./pages/historia-clinica/VerHistoriaClinica";
+import verhistoriaclinica from "./pages/historia-clinica/verhistoriaclinica";
 
 export default function App() {
   const { isAuthenticated } = useAuth();
