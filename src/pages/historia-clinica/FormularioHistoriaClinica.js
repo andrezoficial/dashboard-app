@@ -6,7 +6,6 @@ import AsyncSelect from "react-select/async";
 import Select from "react-select";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import html2canvas from "html2canvas";
 
 const API_BASE_URL = "https://backend-dashboard-v2.onrender.com/api";
 const LOGO_URL = "https://www.viorclinic.es/logo192.png";
@@ -35,6 +34,7 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     cupsConNombre: [],
     datosPaciente: {},
   });
+
   const [cupsOpciones, setCupsOpciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -49,11 +49,10 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     }
     (async () => {
       try {
-        const res = await axios.get(
-          `${API_BASE_URL}/pacientes/${pacienteId}/historia`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setDatos(res.data);
+        const res = await axios.get(`${API_BASE_URL}/pacientes/${pacienteId}/historia`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setDatos((prev) => ({ ...prev, ...res.data }));
       } catch (err) {
         if (err.response?.status === 404) {
           setDatos((prev) => ({
@@ -69,7 +68,6 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
             cupsConNombre: [],
           }));
         } else {
-          console.error(err);
           setError("Error al cargar la historia clínica");
         }
       }
@@ -79,7 +77,6 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
         });
         setCupsOpciones(cupsRes.data);
       } catch (err) {
-        console.error(err);
         setError("Error al cargar los CUPS");
       } finally {
         setLoading(false);
@@ -92,10 +89,19 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     setDatos((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleDiagnosticoChange = (opcion) => {
+    setDatos((prev) => ({
+      ...prev,
+      codigoDiagnostico: opcion?.value || "",
+      nombreDiagnostico: opcion?.title || "",
+    }));
+  };
+
   const handleCupsChange = (selected) => {
     setDatos((prev) => ({
       ...prev,
-      cups: selected ? selected.map((opt) => opt.value) : [],
+      cups: selected ? selected.map((opt) => opt.codigo) : [],
+      cupsConNombre: selected || [],
     }));
   };
 
@@ -112,16 +118,12 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
       onGuardar?.(datos);
       alert("Historia clínica guardada");
     } catch (err) {
-      console.error(err);
       alert("Error al guardar la historia clínica");
     }
   };
 
   const cargarDiagnosticos = async (inputValue, callback) => {
-    if (!inputValue || inputValue.length < 3) {
-      callback([]);
-      return;
-    }
+    if (!inputValue || inputValue.length < 3) return callback([]);
     try {
       const res = await axios.get(
         `${API_BASE_URL}/icd11/buscar?termino=${encodeURIComponent(inputValue)}`
@@ -132,8 +134,7 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
         title: item.title,
       }));
       callback(resultados);
-    } catch (err) {
-      console.error(err);
+    } catch {
       callback([]);
     }
   };
@@ -142,7 +143,6 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     const doc = new jsPDF("p", "mm", "a4");
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    // Logo
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.src = LOGO_URL;
@@ -151,7 +151,6 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
     const logoHeight = (logoWidth * img.height) / img.width;
     doc.addImage(img, "PNG", (pageWidth - logoWidth) / 2, 10, logoWidth, logoHeight);
 
-    // Título
     doc
       .setFontSize(18)
       .setTextColor("#1e88e5")
@@ -159,14 +158,10 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
         align: "center",
       });
 
-    // Tabla datos paciente
     const dp = datos.datosPaciente || {};
     const pacienteRows = [
       ["Nombre", dp.nombreCompleto || "-"],
-      [
-        "Documento",
-        dp.tipoDocumento?.toUpperCase() + " " + dp.numeroDocumento || "-",
-      ],
+      ["Documento", `${dp.tipoDocumento?.toUpperCase() || ""} ${dp.numeroDocumento || "-"}`],
       ["Fecha Nac.", dp.fechaNacimiento?.split("T")[0] || "-"],
       ["Sexo", dp.sexo || "-"],
       ["Correo", dp.correo || "-"],
@@ -175,12 +170,7 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
       ["Dirección", dp.direccion || "-"],
       ["Estado Civil", dp.estadoCivil || "-"],
       ["Ocupación", dp.ocupacion || "-"],
-      [
-        "Contact. Emergencia",
-        dp.contactoEmergenciaNombre
-          ? `${dp.contactoEmergenciaNombre} (${dp.contactoEmergenciaTelefono})`
-          : "-",
-      ],
+      ["Contacto Emergencia", dp.contactoEmergenciaNombre ? `${dp.contactoEmergenciaNombre} (${dp.contactoEmergenciaTelefono})` : "-"],
     ];
     autoTable(doc, {
       startY: 70,
@@ -192,7 +182,6 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
       margin: { left: 15, right: 15 },
     });
 
-    // Secciones clínicas
     let y = doc.lastAutoTable.finalY + 10;
     const secciones = [
       { label: "Motivo de consulta", value: datos.motivoConsulta },
@@ -203,15 +192,11 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
       { label: "Recomendaciones", value: datos.recomendaciones },
     ];
     secciones.forEach(({ label, value }) => {
-      doc
-        .setFontSize(14)
-        .setTextColor("#1e88e5")
-        .text(label, 15, y);
+      doc.setFontSize(14).setTextColor("#1e88e5").text(label, 15, y);
       y += 6;
-      doc
-        .setFontSize(12)
-        .setTextColor("#000")
-        .text(value || "-", 15, y, { maxWidth: pageWidth - 30 });
+      doc.setFontSize(12).setTextColor("#000").text(value || "-", 15, y, {
+        maxWidth: pageWidth - 30,
+      });
       y += doc.getTextDimensions(value || "-").h + 8;
       if (y > 270) {
         doc.addPage();
@@ -219,20 +204,11 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
       }
     });
 
-    // CUPS
     if (datos.cupsConNombre.length) {
-      doc
-        .setFontSize(14)
-        .setTextColor("#1e88e5")
-        .text("Procedimientos (CUPS)", 15, y);
+      doc.setFontSize(14).setTextColor("#1e88e5").text("CUPS", 15, y);
       y += 6;
       datos.cupsConNombre.forEach(({ codigo, nombre }) => {
-        doc
-          .setFontSize(12)
-          .setTextColor("#000")
-          .text(`• ${codigo} - ${nombre}`, 15, y, {
-            maxWidth: pageWidth - 30,
-          });
+        doc.setFontSize(12).setTextColor("#000").text(`• ${codigo} - ${nombre}`, 15, y);
         y += 6;
         if (y > 280) {
           doc.addPage();
@@ -241,32 +217,17 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
       });
     }
 
-    doc.save(
-      `historia_clinica_${(dp.nombreCompleto || "paciente")
-        .replace(/\s+/g, "_")
-        .toLowerCase()}.pdf`
-    );
+    doc.setFontSize(10).setTextColor("gray").text("Generado por ViorClinic", 15, 290, { align: "center" });
+    doc.save(`historia_clinica_${(dp.nombreCompleto || "paciente").replace(/\s+/g, "_")}.pdf`);
   };
 
-  if (loading)
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  if (error)
-    return (
-      <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
-        <p className="font-bold">Error</p>
-        <p>{error}</p>
-      </div>
-    );
+  if (loading) return <div className="text-center py-10">Cargando...</div>;
+  if (error) return <div className="text-red-500 p-4">{error}</div>;
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden dark:bg-gray-800">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white">
+      <div className="bg-white rounded-xl shadow-lg dark:bg-gray-800">
+        <div className="bg-blue-700 p-6 text-white rounded-t-xl">
           <h1 className="text-2xl font-bold">Historia Clínica</h1>
           {datos.datosPaciente.nombreCompleto && (
             <p className="text-blue-100">
@@ -274,22 +235,78 @@ export default function FormularioHistoriaClinica({ onGuardar }) {
             </p>
           )}
         </div>
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} ref={formRef} className="p-6 space-y-6">
-          {/* ... el resto de campos igual ... */}
-          <div className="flex flex-wrap gap-4 pt-6">
+
+        <form onSubmit={handleSubmit} ref={formRef} className="p-6 space-y-4">
+          <Select
+            options={opcionesMotivoConsulta}
+            value={opcionesMotivoConsulta.find(
+              (opt) => opt.value === datos.motivoConsulta
+            )}
+            onChange={(opt) =>
+              setDatos((prev) => ({ ...prev, motivoConsulta: opt.value }))
+            }
+          />
+          <textarea
+            name="antecedentes"
+            className="w-full border rounded p-2"
+            rows={2}
+            value={datos.antecedentes}
+            onChange={handleChange}
+            placeholder="Antecedentes"
+          />
+          <textarea
+            name="examenFisico"
+            className="w-full border rounded p-2"
+            rows={2}
+            value={datos.examenFisico}
+            onChange={handleChange}
+            placeholder="Examen físico"
+          />
+          <AsyncSelect
+            cacheOptions
+            loadOptions={cargarDiagnosticos}
+            onChange={handleDiagnosticoChange}
+            placeholder="Buscar diagnóstico ICD-11"
+          />
+          <textarea
+            name="tratamiento"
+            className="w-full border rounded p-2"
+            rows={2}
+            value={datos.tratamiento}
+            onChange={handleChange}
+            placeholder="Tratamiento"
+          />
+          <textarea
+            name="recomendaciones"
+            className="w-full border rounded p-2"
+            rows={2}
+            value={datos.recomendaciones}
+            onChange={handleChange}
+            placeholder="Recomendaciones"
+          />
+          <Select
+            isMulti
+            options={cupsOpciones}
+            getOptionLabel={(opt) => `${opt.codigo} - ${opt.nombre}`}
+            getOptionValue={(opt) => opt.codigo}
+            onChange={handleCupsChange}
+            value={datos.cupsConNombre}
+            placeholder="Seleccionar CUPS"
+          />
+
+          <div className="flex gap-4 pt-6">
             <button
               type="submit"
-              className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-md hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded shadow"
             >
               Guardar historia clínica
             </button>
             <button
               type="button"
               onClick={exportarPDF}
-              className="px-6 py-3 bg-green-600 text-white font-medium rounded-lg shadow-md hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded shadow"
             >
-              Exportar a PDF
+              Exportar PDF
             </button>
           </div>
         </form>
