@@ -8,13 +8,12 @@ export default function VerHistoriaClinica() {
   const [error, setError] = useState(null);
   const [editando, setEditando] = useState(false);
   const [formData, setFormData] = useState({
-    motivoConsulta: "",
-    antecedentes: "",
-    examenFisico: "",
+    motivoConsulta: { descripcion: "" },
+    antecedentes: {},
+    examenFisico: {},
     diagnosticos: { presuntivos: [], definitivos: [], diferenciales: [] },
-    tratamiento: "",
-    recomendaciones: "",
-    cups: [],
+    tratamiento: { medicamentos: [], procedimientos: [] },
+    recomendaciones: {},
     sexo: "",
     fechaNacimiento: "",
     identificacion: { tipo: "", numero: "" },
@@ -40,13 +39,12 @@ export default function VerHistoriaClinica() {
         setDatos(res.data);
 
         setFormData({
-          motivoConsulta: res.data.motivoConsulta?.descripcion || "",
-          antecedentes: JSON.stringify(res.data.antecedentes) || "",
-          examenFisico: JSON.stringify(res.data.examenFisico) || "",
+          motivoConsulta: res.data.motivoConsulta || { descripcion: "" },
+          antecedentes: res.data.antecedentes || {},
+          examenFisico: res.data.examenFisico || {},
           diagnosticos: res.data.diagnosticos || { presuntivos: [], definitivos: [], diferenciales: [] },
-          tratamiento: JSON.stringify(res.data.tratamiento) || "",
-          recomendaciones: JSON.stringify(res.data.recomendaciones) || "",
-          cups: res.data.tratamiento?.procedimientos || [],
+          tratamiento: res.data.tratamiento || { medicamentos: [], procedimientos: [] },
+          recomendaciones: res.data.recomendaciones || {},
           sexo: res.data.sexo || "",
           fechaNacimiento: res.data.fechaNacimiento ? new Date(res.data.fechaNacimiento).toISOString().substr(0,10) : "",
           identificacion: res.data.identificacion || { tipo: "", numero: "" },
@@ -80,6 +78,11 @@ export default function VerHistoriaClinica() {
         ...prev,
         contactoEmergencia: { ...prev.contactoEmergencia, [name.split(".")[1]]: value },
       }));
+    } else if (name === "motivoConsulta") {
+      setFormData((prev) => ({
+        ...prev,
+        motivoConsulta: { descripcion: value },
+      }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -91,19 +94,15 @@ export default function VerHistoriaClinica() {
     if (!token) return setError("No autorizado");
 
     try {
-      const antecedentesParsed = formData.antecedentes ? JSON.parse(formData.antecedentes) : {};
-      const examenFisicoParsed = formData.examenFisico ? JSON.parse(formData.examenFisico) : {};
-      const tratamientoParsed = formData.tratamiento ? JSON.parse(formData.tratamiento) : {};
-      const recomendacionesParsed = formData.recomendaciones ? JSON.parse(formData.recomendaciones) : {};
-
+      // Aquí ya no parseamos JSON porque los datos ya están en objetos
       const body = {
-        motivoConsulta: { descripcion: formData.motivoConsulta },
-        antecedentes: antecedentesParsed,
-        examenFisico: examenFisicoParsed,
+        motivoConsulta: formData.motivoConsulta,
+        antecedentes: formData.antecedentes,
+        examenFisico: formData.examenFisico,
         diagnosticos: formData.diagnosticos,
-        tratamiento: tratamientoParsed,
-        recomendaciones: recomendacionesParsed,
-        cups: formData.cups,
+        tratamiento: formData.tratamiento,
+        recomendaciones: formData.recomendaciones,
+        cups: formData.tratamiento.procedimientos || [],
         sexo: formData.sexo,
         fechaNacimiento: formData.fechaNacimiento,
         identificacion: formData.identificacion,
@@ -195,13 +194,16 @@ export default function VerHistoriaClinica() {
           <label className="font-semibold">Motivo de consulta</label>
           <textarea
             name="motivoConsulta"
-            value={formData.motivoConsulta}
+            value={formData.motivoConsulta.descripcion}
             onChange={handleChange}
             required
             className="w-full border rounded px-3 py-2"
           />
         </div>
 
+        {/* Otros campos... como los que ya tienes */}
+
+        {/* Ejemplo para sexo */}
         <div>
           <label className="font-semibold">Sexo</label>
           <select
@@ -218,148 +220,7 @@ export default function VerHistoriaClinica() {
           </select>
         </div>
 
-        <div>
-          <label className="font-semibold">Fecha de nacimiento</label>
-          <input
-            type="date"
-            name="fechaNacimiento"
-            value={formData.fechaNacimiento}
-            onChange={handleChange}
-            required
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="font-semibold">Tipo de documento</label>
-            <select
-              name="identificacion.tipo"
-              value={formData.identificacion.tipo}
-              onChange={handleChange}
-              required
-              className="w-full border rounded px-3 py-2"
-            >
-              <option value="">Seleccione</option>
-              <option value="cc">CC</option>
-              <option value="ti">TI</option>
-              <option value="ce">CE</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="font-semibold">Número de documento</label>
-            <input
-              type="text"
-              name="identificacion.numero"
-              value={formData.identificacion.numero}
-              onChange={handleChange}
-              required
-              className="w-full border rounded px-3 py-2"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="font-semibold">Estado Civil</label>
-          <input
-            type="text"
-            name="estadoCivil"
-            value={formData.estadoCivil}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label className="font-semibold">Ocupación</label>
-          <input
-            type="text"
-            name="ocupacion"
-            value={formData.ocupacion}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label className="font-semibold">Dirección</label>
-          <input
-            type="text"
-            name="direccion"
-            value={formData.direccion}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label className="font-semibold">Teléfono</label>
-          <input
-            type="text"
-            name="telefono"
-            value={formData.telefono}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label className="font-semibold">Correo</label>
-          <input
-            type="email"
-            name="correo"
-            value={formData.correo}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label className="font-semibold">EPS</label>
-          <input
-            type="text"
-            name="eps"
-            value={formData.eps}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label className="font-semibold">Contacto de Emergencia - Nombre</label>
-          <input
-            type="text"
-            name="contactoEmergencia.nombre"
-            value={formData.contactoEmergencia.nombre}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label className="font-semibold">Contacto de Emergencia - Relación</label>
-          <input
-            type="text"
-            name="contactoEmergencia.relacion"
-            value={formData.contactoEmergencia.relacion}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label className="font-semibold">Contacto de Emergencia - Teléfono</label>
-          <input
-            type="text"
-            name="contactoEmergencia.telefono"
-            value={formData.contactoEmergencia.telefono}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        {/* Aquí puedes agregar más campos según necesites */}
+        {/* El resto de inputs igual que en tu código */}
 
         <div className="flex gap-4 mt-4">
           <button
