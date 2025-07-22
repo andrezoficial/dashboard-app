@@ -1,3 +1,4 @@
+// src/pages/historia-clinica/VerHistoriaClinica.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
@@ -42,11 +43,14 @@ export default function VerHistoriaClinica() {
           motivoConsulta: res.data.motivoConsulta || { descripcion: "" },
           antecedentes: res.data.antecedentes || {},
           examenFisico: res.data.examenFisico || {},
-          diagnosticos: res.data.diagnosticos || { presuntivos: [], definitivos: [], diferenciales: [] },
+          diagnosticos:
+            res.data.diagnosticos || { presuntivos: [], definitivos: [], diferenciales: [] },
           tratamiento: res.data.tratamiento || { medicamentos: [], procedimientos: [] },
           recomendaciones: res.data.recomendaciones || {},
           sexo: res.data.sexo || "",
-          fechaNacimiento: res.data.fechaNacimiento ? new Date(res.data.fechaNacimiento).toISOString().substr(0,10) : "",
+          fechaNacimiento: res.data.fechaNacimiento
+            ? new Date(res.data.fechaNacimiento).toISOString().substr(0, 10)
+            : "",
           identificacion: res.data.identificacion || { tipo: "", numero: "" },
           estadoCivil: res.data.estadoCivil || "",
           ocupacion: res.data.ocupacion || "",
@@ -54,7 +58,8 @@ export default function VerHistoriaClinica() {
           telefono: res.data.telefono || "",
           correo: res.data.correo || "",
           eps: res.data.eps || "",
-          contactoEmergencia: res.data.contactoEmergencia || { nombre: "", relacion: "", telefono: "" },
+          contactoEmergencia:
+            res.data.contactoEmergencia || { nombre: "", relacion: "", telefono: "" },
         });
       } catch (err) {
         setError("Error al cargar la historia clínica");
@@ -67,7 +72,6 @@ export default function VerHistoriaClinica() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     if (name.startsWith("identificacion.")) {
       setFormData((prev) => ({
         ...prev,
@@ -76,13 +80,13 @@ export default function VerHistoriaClinica() {
     } else if (name.startsWith("contactoEmergencia.")) {
       setFormData((prev) => ({
         ...prev,
-        contactoEmergencia: { ...prev.contactoEmergencia, [name.split(".")[1]]: value },
+        contactoEmergencia: {
+          ...prev.contactoEmergencia,
+          [name.split(".")[1]]: value,
+        },
       }));
     } else if (name === "motivoConsulta") {
-      setFormData((prev) => ({
-        ...prev,
-        motivoConsulta: { descripcion: value },
-      }));
+      setFormData((prev) => ({ ...prev, motivoConsulta: { descripcion: value } }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -94,7 +98,6 @@ export default function VerHistoriaClinica() {
     if (!token) return setError("No autorizado");
 
     try {
-      // Aquí ya no parseamos JSON porque los datos ya están en objetos
       const body = {
         motivoConsulta: formData.motivoConsulta,
         antecedentes: formData.antecedentes,
@@ -123,33 +126,34 @@ export default function VerHistoriaClinica() {
 
       setError(null);
       setEditando(false);
-
       const res = await axios.get(
         `https://backend-dashboard-v2.onrender.com/api/pacientes/${pacienteId}/historia`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setDatos(res.data);
-    } catch (err) {
+    } catch {
       setError("Error al guardar la historia clínica. Verifique los datos ingresados.");
     }
   };
 
+  // Vista de solo lectura
   if (!editando) {
     return (
       <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-md mt-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-blue-700">
-            Historia Clínica de {datos.datosPaciente?.nombreCompleto || "Paciente"}
+            Historia Clínica de {datos.datosPaciente?.nombreCompleto}
           </h1>
-          <div>
+          <div className="flex gap-2">
             <button
               onClick={() => setEditando(true)}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg mr-2"
+              className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg"
             >
               ✏️ Editar
             </button>
+            {/* ← Enlace corregido */}
             <Link
-              to={`/historia-clinica/${pacienteId}/formulario`}
+              to={`/dashboard/pacientes/${pacienteId}/historia-clinica`}
               className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg"
             >
               📝 Formulario clínico
@@ -158,18 +162,38 @@ export default function VerHistoriaClinica() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 text-sm text-gray-700">
-          <p><strong>Motivo de consulta:</strong> {datos.motivoConsulta?.descripcion || "-"}</p>
-          <p><strong>Antecedentes:</strong> {JSON.stringify(datos.antecedentes) || "-"}</p>
-          <p><strong>Examen físico:</strong> {JSON.stringify(datos.examenFisico) || "-"}</p>
-          <p><strong>Diagnóstico:</strong> {datos.diagnosticos?.definitivos?.map(d => d.descripcion).join(", ") || "-"}</p>
-          <p><strong>Tratamiento:</strong> {JSON.stringify(datos.tratamiento) || "-"}</p>
-          <p><strong>Recomendaciones:</strong> {JSON.stringify(datos.recomendaciones) || "-"}</p>
+          <p>
+            <strong>Motivo de consulta:</strong> {datos.motivoConsulta?.descripcion || "-"}
+          </p>
+          <p>
+            <strong>Antecedentes:</strong>{" "}
+            {JSON.stringify(datos.antecedentes) || "-"}
+          </p>
+          <p>
+            <strong>Examen físico:</strong>{" "}
+            {JSON.stringify(datos.examenFisico) || "-"}
+          </p>
+          <p>
+            <strong>Diagnóstico:</strong>{" "}
+            {datos.diagnosticos?.definitivos
+              ?.map((d) => d.descripcion)
+              .join(", ") || "-"}
+          </p>
+          <p>
+            <strong>Tratamiento:</strong> {JSON.stringify(datos.tratamiento) || "-"}
+          </p>
+          <p>
+            <strong>Recomendaciones:</strong>{" "}
+            {JSON.stringify(datos.recomendaciones) || "-"}
+          </p>
           <div>
             <strong>CUPS:</strong>
             <ul className="list-disc ml-6 mt-1">
               {datos.tratamiento?.procedimientos?.length ? (
                 datos.tratamiento.procedimientos.map((c, i) => (
-                  <li key={i}>{c.codigoCUPS} - {c.nombre}</li>
+                  <li key={i}>
+                    {c.codigoCUPS} - {c.nombre}
+                  </li>
                 ))
               ) : (
                 <li>No hay procedimientos registrados</li>
@@ -181,14 +205,13 @@ export default function VerHistoriaClinica() {
     );
   }
 
+  // Vista de edición
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-md mt-6">
       <h1 className="text-2xl font-bold text-blue-700 mb-6">
-        Editar Historia Clínica de {datos.datosPaciente?.nombreCompleto || "Paciente"}
+        Editar Historia Clínica de {datos.datosPaciente?.nombreCompleto}
       </h1>
-
       {error && <p className="text-red-500 mb-4">{error}</p>}
-
       <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 text-gray-700">
         <div>
           <label className="font-semibold">Motivo de consulta</label>
@@ -201,26 +224,7 @@ export default function VerHistoriaClinica() {
           />
         </div>
 
-        {/* Otros campos... como los que ya tienes */}
-
-        {/* Ejemplo para sexo */}
-        <div>
-          <label className="font-semibold">Sexo</label>
-          <select
-            name="sexo"
-            value={formData.sexo}
-            onChange={handleChange}
-            required
-            className="w-full border rounded px-3 py-2"
-          >
-            <option value="">Seleccione</option>
-            <option value="Masculino">Masculino</option>
-            <option value="Femenino">Femenino</option>
-            <option value="Otro">Otro</option>
-          </select>
-        </div>
-
-        {/* El resto de inputs igual que en tu código */}
+        {/* Aquí puedes seguir poniendo los demás campos de formulario */}
 
         <div className="flex gap-4 mt-4">
           <button
