@@ -24,7 +24,6 @@ import VerHistoriaClinica from "./pages/VerHistoriaClinica";
 
 import { useAuth } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
-import AdminRoute from "./components/AdminRoute";
 
 export default function App() {
   const { isAuthenticated } = useAuth();
@@ -69,15 +68,8 @@ export default function App() {
           {/* Inicio del dashboard */}
           <Route index element={<DashboardPage />} />
 
-          {/* Usuarios (solo admin) */}
-          <Route
-            path="usuarios"
-            element={
-              <AdminRoute>
-                <UsuariosPage />
-              </AdminRoute>
-            }
-          />
+          {/* Usuarios */}
+          <Route path="usuarios" element={<UsuariosPage />} />
 
           {/* Pacientes */}
           <Route path="pacientes" element={<Pacientes />} />
@@ -94,25 +86,11 @@ export default function App() {
             element={<VerHistoriaClinica />}
           />
 
-          {/* Citas (solo admin) */}
-          <Route
-            path="citas"
-            element={
-              <AdminRoute>
-                <Citas />
-              </AdminRoute>
-            }
-          />
+          {/* Citas */}
+          <Route path="citas" element={<Citas />} />
 
-          {/* Configuración (solo admin) */}
-          <Route
-            path="configuracion"
-            element={
-              <AdminRoute>
-                <ConfiguracionPage />
-              </AdminRoute>
-            }
-          />
+          {/* Configuración */}
+          <Route path="configuracion" element={<ConfiguracionPage />} />
 
           {/* Chat */}
           <Route path="chat" element={<ChatPage />} />
