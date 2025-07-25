@@ -3,9 +3,10 @@ import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import UserForm from "../components/UserForm";
+import Role from "../components/access-control/Role";
 
 const API_URL = "https://backend-dashboard-v2.onrender.com/api";
-const roles = ["Todos", "Administrador", "Editor", "Lector"];
+const roles = ["Todos", "Admin", "Medico", "Auxiliar"];
 const pageSize = 3;
 
 export default function UsuariosPage() {
@@ -116,12 +117,14 @@ export default function UsuariosPage() {
       </h1>
 
       {!formVisible && (
-        <button
-          onClick={handleNuevoUsuario}
-          className="mb-4 px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 block sm:inline-block"
-        >
-          Nuevo Usuario
-        </button>
+        <Role permission="editar_usuarios">
+  <button
+    onClick={handleNuevoUsuario}
+    className="mb-4 px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 block sm:inline-block"
+  >
+    Nuevo Usuario
+  </button>
+</Role>
       )}
 
       {formVisible && (

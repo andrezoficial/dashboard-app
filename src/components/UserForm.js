@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 
-const roles = ["Administrador", "Editor", "Lector"];
+const roles = ["Admin", "Medico", "Auxiliar"];
 
 export default function UserForm({ onSubmit, onCancel, usuarioEditando }) {
   const [nombre, setNombre] = useState("");
