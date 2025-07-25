@@ -116,15 +116,16 @@ export default function UsuariosPage() {
         Usuarios Registrados
       </h1>
 
+      {/* CREAR USUARIO: Solo Admin */}
       {!formVisible && (
-        <Role permission="editar_usuarios">
-  <button
-    onClick={handleNuevoUsuario}
-    className="mb-4 px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 block sm:inline-block"
-  >
-    Nuevo Usuario
-  </button>
-</Role>
+        <Role permission="crear_usuarios">
+          <button
+            onClick={handleNuevoUsuario}
+            className="mb-4 px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+          >
+            Nuevo Usuario
+          </button>
+        </Role>
       )}
 
       {formVisible && (
@@ -137,6 +138,7 @@ export default function UsuariosPage() {
         </div>
       )}
 
+      {/* FILTROS */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
         <input
           type="text"
@@ -154,13 +156,13 @@ export default function UsuariosPage() {
           {roles.map((rol) => (
             <button
               key={rol}
-              className={`px-3 py-1 rounded border transition whitespace-nowrap ${
+              onClick={() => handleFiltroRol(rol)}
+              disabled={formVisible}
+              className={`px-3 py-1 rounded border ${
                 filtroRol === rol
                   ? "bg-blue-600 text-white border-blue-600"
                   : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600"
               }`}
-              onClick={() => handleFiltroRol(rol)}
-              disabled={formVisible}
             >
               {rol}
             </button>
@@ -168,7 +170,7 @@ export default function UsuariosPage() {
         </div>
       </div>
 
-      {/* Tarjetas para móviles */}
+      {/* VERSION MÓVIL */}
       <div className="grid gap-4 sm:hidden">
         {usuariosVisibles.length === 0 ? (
           <p className="text-center text-gray-500 dark:text-gray-400 py-4">
@@ -178,7 +180,7 @@ export default function UsuariosPage() {
           usuariosVisibles.map((usuario) => (
             <div
               key={usuario._id}
-              className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded p-4 shadow flex flex-col gap-1"
+              className="bg-white dark:bg-gray-700 border dark:border-gray-600 rounded p-4 shadow flex flex-col gap-1"
             >
               <h2 className="text-lg font-semibold text-blue-700 dark:text-blue-400">
                 {usuario.nombre}
@@ -190,90 +192,82 @@ export default function UsuariosPage() {
                 <strong>Rol:</strong> {usuario.rol}
               </p>
               <div className="flex gap-4 mt-2">
-                <button
-                  onClick={() => handleEditarUsuario(usuario)}
-                  className="text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => handleEliminar(usuario._id)}
-                  className="text-red-600 dark:text-red-400 hover:underline"
-                >
-                  Eliminar
-                </button>
+                {/* EDITAR: Solo Admin */}
+                <Role permission="editar_usuarios">
+                  <button
+                    onClick={() => handleEditarUsuario(usuario)}
+                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Editar
+                  </button>
+                </Role>
+                {/* ELIMINAR: Solo Admin */}
+                <Role permission="eliminar_usuarios">
+                  <button
+                    onClick={() => handleEliminar(usuario._id)}
+                    className="text-red-600 dark:text-red-400 hover:underline"
+                  >
+                    Eliminar
+                  </button>
+                </Role>
               </div>
             </div>
           ))
         )}
       </div>
 
-      {/* Tabla para escritorio */}
+      {/* VERSIÓN DESKTOP */}
       <div className="hidden sm:block overflow-x-auto rounded border bg-white dark:bg-gray-700">
         <table className="w-full min-w-[600px] divide-y divide-gray-200 dark:divide-gray-600 text-sm">
           <thead className="bg-gray-50 dark:bg-gray-600">
             <tr>
-              <th className="px-4 py-2 text-left font-semibold text-gray-600 dark:text-gray-200">
-                Nombre
-              </th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-600 dark:text-gray-200">
-                Correo
-              </th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-600 dark:text-gray-200">
-                Rol
-              </th>
-              <th className="px-4 py-2"></th>
+              <th className="px-4 py-2">Nombre</th>
+              <th className="px-4 py-2">Correo</th>
+              <th className="px-4 py-2">Rol</th>
+              <th className="px-4 py-2">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-600 bg-white dark:bg-gray-700">
-            {usuariosVisibles.length === 0 ? (
-              <tr>
-                <td colSpan="4" className="text-center text-gray-500 dark:text-gray-400 py-4">
-                  No se encontraron resultados.
-                </td>
-              </tr>
-            ) : (
-              //good
-              usuariosVisibles.map((usuario) => (
-                <tr
-                  key={usuario._id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-600"
-                >
-                  <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
-                    {usuario.nombre}
-                  </td>
-                  <td className="px-4 py-2 text-gray-600 dark:text-gray-300">
-                    {usuario.email}
-                  </td>
-                  <td className="px-4 py-2 text-gray-600 dark:text-gray-300">
-                    {usuario.rol}
-                  </td>
-                  <td className="px-4 py-2 text-right space-x-2 whitespace-nowrap">
+          <tbody className="bg-white dark:bg-gray-700">
+            {usuariosVisibles.map((usuario) => (
+              <tr
+                key={usuario._id}
+                className="hover:bg-gray-50 dark:hover:bg-gray-600"
+              >
+                <td className="px-4 py-2">{usuario.nombre}</td>
+                <td className="px-4 py-2">{usuario.email}</td>
+                <td className="px-4 py-2">{usuario.rol}</td>
+                <td className="px-4 py-2 text-right space-x-2 whitespace-nowrap">
+                  {/* EDITAR: Solo Admin */}
+                  <Role permission="editar_usuarios">
                     <button
                       onClick={() => handleEditarUsuario(usuario)}
                       className="text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       Editar
                     </button>
+                  </Role>
+                  {/* ELIMINAR: Solo Admin */}
+                  <Role permission="eliminar_usuarios">
                     <button
                       onClick={() => handleEliminar(usuario._id)}
                       className="text-red-600 dark:text-red-400 hover:underline"
                     >
                       Eliminar
                     </button>
-                  </td>
-                </tr>
-              ))
-            )}
+                  </Role>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
+      {/* PAGINACIÓN */}
       <div className="flex justify-between items-center mt-4 flex-wrap gap-2">
         <button
           disabled={currentPage === 1 || formVisible}
-          onClick={() => setCurrentPage(currentPage - 1)}
-          className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-50"
+          onClick={() => setCurrentPage((p) => p - 1)}
+          className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-600 disabled:opacity-50"
         >
           Anterior
         </button>
@@ -282,8 +276,8 @@ export default function UsuariosPage() {
         </span>
         <button
           disabled={currentPage === totalPages || totalPages === 0 || formVisible}
-          onClick={() => setCurrentPage(currentPage + 1)}
-          className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-50"
+          onClick={() => setCurrentPage((p) => p + 1)}
+          className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-600 disabled:opacity-50"
         >
           Siguiente
         </button>
