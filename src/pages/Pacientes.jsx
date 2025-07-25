@@ -5,10 +5,12 @@ import { toast, ToastContainer } from "react-toastify";
 import { Link } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
 import GraficoCitas from "../components/GraficoCitas";
+import { useAuth } from "../context/AuthContext";
 
 const API_BASE_URL = "https://backend-dashboard-v2.onrender.com/api";
 
 export default function Pacientes() {
+  const { user } = useAuth();
   const [pacientes, setPacientes] = useState([]);
   const [formVisible, setFormVisible] = useState(false);
   const [formData, setFormData] = useState({
@@ -84,15 +86,14 @@ export default function Pacientes() {
         return res.json();
       })
       .then((paciente) => {
-        if (editId) {
-          setPacientes((prev) =>
-            prev.map((p) => (p._id === editId ? paciente : p))
-          );
-          toast.success("Paciente actualizado correctamente");
-        } else {
-          setPacientes((prev) => [...prev, paciente]);
-          toast.success("Paciente creado exitosamente");
-        }
+        setPacientes((prev) =>
+          editId
+            ? prev.map((p) => (p._id === editId ? paciente : p))
+            : [...prev, paciente]
+        );
+        toast.success(
+          editId ? "Paciente actualizado correctamente" : "Paciente creado exitosamente"
+        );
         resetForm();
       })
       .catch((error) => toast.error(error.message));
@@ -114,6 +115,9 @@ export default function Pacientes() {
       })
       .catch((error) => toast.error(error.message));
   };
+
+  const canViewHistoria =
+    user && (user.rol === "Admin" || user.rol === "Medico");
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 text-gray-900 dark:text-gray-100">
@@ -185,9 +189,12 @@ export default function Pacientes() {
                   value={formData[name]}
                   onChange={handleChange}
                   required={
-                    !["ocupacion", "direccion", "contactoEmergenciaNombre", "contactoEmergenciaTelefono"].includes(
-                      name
-                    )
+                    ![
+                      "ocupacion",
+                      "direccion",
+                      "contactoEmergenciaNombre",
+                      "contactoEmergenciaTelefono",
+                    ].includes(name)
                   }
                   className="w-full border px-3 py-2 rounded bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                 />
@@ -275,11 +282,9 @@ export default function Pacientes() {
               exit={{ opacity: 0 }}
               className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded shadow p-4 space-y-1"
             >
-              {/* Datos del paciente */}
               <h2 className="text-lg font-semibold text-blue-700 dark:text-blue-400">
                 {p.nombreCompleto}
               </h2>
-              {/* ...otros datos */}
               <div className="flex gap-4 mt-2">
                 <button
                   onClick={() => handleEdit(p)}
@@ -293,13 +298,14 @@ export default function Pacientes() {
                 >
                   Eliminar
                 </button>
-                {/* Aquí corregimos la ruta al componente VerHistoriaClinica */}
-                <Link
-                  to={`/dashboard/pacientes/${p._id}/historia-clinica/ver`}
-                  className="text-green-600 hover:underline"
-                >
-                  Historia Clínica
-                </Link>
+                {canViewHistoria && (
+                  <Link
+                    to={`/dashboard/pacientes/${p._id}/historia-clinica/ver`}
+                    className="text-green-600 hover:underline"
+                  >
+                    Historia Clínica
+                  </Link>
+                )}
               </div>
             </motion.div>
           ))
@@ -385,12 +391,14 @@ export default function Pacientes() {
                   >
                     Eliminar
                   </button>
-                  <Link
-                    to={`/dashboard/pacientes/${p._id}/historia-clinica/ver`}
-                    className="text-green-600 hover:underline"
-                  >
-                    Historia Clínica
-                  </Link>
+                  {canViewHistoria && (
+                    <Link
+                      to={`/dashboard/pacientes/${p._id}/historia-clinica/ver`}
+                      className="text-green-600 hover:underline"
+                    >
+                      Historia Clínica
+                    </Link>
+                  )}
                 </td>
               </motion.tr>
             ))}
